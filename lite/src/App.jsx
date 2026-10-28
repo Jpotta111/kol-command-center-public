@@ -11,7 +11,32 @@ import { createClient, recentWorks, authorsByIds } from "./lib/openalex";
 import { buildNetwork, enrichPeople, rankPeople, toCsvRows, computeInsights } from "./lib/network";
 import { loadSavedKeys, persistKeys } from "./lib/storage";
 import { downloadText, rowsToCsv } from "./lib/csv";
-import { SIGNUP_URL, LINKEDIN_URL, REPO_URL } from "./config";
+import { SIGNUP_URL, LINKEDIN_URL, REPO_URL, GATE_MODE } from "./config";
+import SignupGate from "./components/SignupGate";
+import { isSignedUp } from "./lib/signup";
+
+const FREE_USED = "kol_discover_lite_free_search_used_v1";
+function freeSearchUsed() {
+  try {
+    return localStorage.getItem(FREE_USED) === "1";
+  } catch {
+    return false;
+  }
+}
+function markFreeSearchUsed() {
+  try {
+    localStorage.setItem(FREE_USED, "1");
+  } catch {
+    // ignore
+  }
+}
+
+const GATE_REASONS = {
+  entry: "KOL Discover Lite is free. Enter your email to start.",
+  search: "You have used your free search. Enter your email for unlimited searches, CSV export and AI briefs.",
+  export: "Enter your email to export your results to CSV, plus unlimited searches and AI briefs.",
+  brief: "Enter your email to write AI briefs, plus unlimited searches and CSV export.",
+};
 
 const STEPS = [
   ["keys", "Keys"],
@@ -33,6 +58,20 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [view, setView] = useState("graph");
+  const [signedUp, setSignedUp] = useState(isSignedUp);
+  const [freeUsed, setFreeUsed] = useState(freeSearchUsed);
+  const [gate, setGate] = useState(null);
+
+  // Ask for an email before an action, depending on GATE_MODE in config.js.
+  const guard = useCallback(
+    (kind, action) => {
+      if (GATE_MODE === "off" || signedUp) return action();
+      if (GATE_MODE === "after-first-search" && kind === "search" && !freeUsed) return action();
+      if (GATE_MODE === "after-first-search" && kind === "entry") return action();
+      setGate({ reason: GATE_REASONS[kind], action });
+    },
+    [signedUp, freeUsed]
+  );
 
   const client = useMemo(
     () =>
@@ -84,6 +123,8 @@ export default function App() {
       const insights = computeInsights(enriched, edges, names);
       setResult({ people: enriched, edges, fromYear, source, sharedMin, insights });
       setStep("results");
+      markFreeSearchUsed();
+      setFreeUsed(true);
     } catch (e) {
       setRunError(e.message || String(e));
       setStep("confirm");
@@ -164,7 +205,7 @@ export default function App() {
       </header>
 
       <main className="flex-1 min-h-0 overflow-auto">
-        {step === "welcome" && <Welcome onStart={() => setStep("keys")} />}
+        {step === "welcome" && <Welcome onStart={() => guard("entry", () => setStep("keys"))} />}
 
         {step === "keys" && (
           <KeySetup keys={keys} onChange={saveKeys} onContinue={() => setStep(result ? "results" : "start")} />
@@ -194,7 +235,7 @@ export default function App() {
               setRows={setSeedRows}
               source={source}
               onBack={() => setStep("start")}
-              onRun={runNetwork}
+              onRun={() => guard("search", runNetwork)}
             />
           </>
         )}
@@ -241,7 +282,7 @@ export default function App() {
                     </button>
                   ))}
                 </div>
-                <button onClick={exportCsv} className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white hover:bg-gray-50">
+                <button onClick={() => guard("export", exportCsv)} className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 bg-white hover:bg-gray-50">
                   Export CSV
                 </button>
                 <button
@@ -255,6 +296,7 @@ export default function App() {
                 </button>
               </div>
             </div>
+{!signedUp && (
             <div className="bg-brand-soft border-b border-brand/20 px-4 sm:px-6 py-2 text-sm flex flex-wrap items-center gap-x-3 gap-y-1">
               <span className="text-brand-dark">
                 Was this useful? I'm building more free tools like this for Medical Affairs and clinical teams.
@@ -263,6 +305,7 @@ export default function App() {
                 Get early access to new features
               </a>
             </div>
+            )}
             <Insights
               insights={result.insights}
               sharedMin={result.sharedMin}
@@ -301,6 +344,7 @@ export default function App() {
                   person={selected}
                   seedNames={seedNames}
                   geminiKey={keys.geminiKey.trim()}
+                  guard={guard}
                   onClose={() => setSelectedId(null)}
                   onOpenKeys={() => setStep("keys")}
                   onSelect={onSelect}
@@ -310,6 +354,19 @@ export default function App() {
           </div>
         )}
       </main>
+
+      {gate && (
+        <SignupGate
+          reason={gate.reason}
+          onCancel={() => setGate(null)}
+          onDone={() => {
+            setSignedUp(true);
+            const next = gate.action;
+            setGate(null);
+            next();
+          }}
+        />
+      )}
 
       {step !== "results" && (
         <footer className="shrink-0 text-xs text-gray-400 px-4 sm:px-6 py-3 flex flex-wrap gap-x-4 gap-y-1 border-t border-gray-200 bg-white">

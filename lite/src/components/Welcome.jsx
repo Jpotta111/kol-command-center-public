@@ -20,7 +20,7 @@ export default function Welcome({ onStart }) {
         >
           Get started
         </button>
-        <span className="self-center text-sm text-gray-500">Free. No account. About 2 minutes to set up.</span>
+        <span className="self-center text-sm text-gray-500">Free. Your first search needs no signup. About 2 minutes to set up.</span>
       </div>
 
       <div className="mt-12 grid sm:grid-cols-3 gap-4">
@@ -41,8 +41,8 @@ export default function Welcome({ onStart }) {
         <p className="mt-1">
           Everything runs in your browser. Your keys and any file you upload stay there. Searches go straight
           from your browser to OpenAlex, and to Google only if you turn on AI briefs. Nothing is stored on our
-          side. We only count anonymous page visits (no cookies) to see whether the tool is useful. Research
-          data comes from{" "}
+          side, except the email and role you give if you sign up, which go to Jared's Google Form. We only count
+          anonymous page visits (no cookies) to see whether the tool is useful. Research data comes from{" "}
           <a className="underline" href="https://openalex.org" target="_blank" rel="noreferrer">
             OpenAlex
           </a>
