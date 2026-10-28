@@ -1,3 +1,5 @@
+import { SIGNUP_URL, LINKEDIN_URL } from "../config";
+
 export default function Welcome({ onStart }) {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
@@ -37,9 +39,10 @@ export default function Welcome({ onStart }) {
       <div className="mt-10 bg-brand-soft rounded-xl p-5 text-sm text-gray-700 leading-relaxed">
         <p className="font-semibold text-brand-dark">Private by design</p>
         <p className="mt-1">
-          Everything runs in your browser. Your keys and any file you upload never touch our servers, because
-          there are no servers. Requests go straight from your browser to OpenAlex, and to Google only if you
-          turn on AI briefs. Research data comes from{" "}
+          Everything runs in your browser. Your keys and any file you upload stay there. Searches go straight
+          from your browser to OpenAlex, and to Google only if you turn on AI briefs. Nothing is stored on our
+          side. We only count anonymous page visits (no cookies) to see whether the tool is useful. Research
+          data comes from{" "}
           <a className="underline" href="https://openalex.org" target="_blank" rel="noreferrer">
             OpenAlex
           </a>
@@ -50,6 +53,18 @@ export default function Welcome({ onStart }) {
       <p className="mt-6 text-xs text-gray-400">
         Publication data can mix up people with similar names. Always confirm identity before reaching out.
       </p>
+
+      <div className="mt-10 border-t border-gray-200 pt-6 text-sm text-gray-600">
+        Built in public by{" "}
+        <a className="text-brand underline" href={LINKEDIN_URL} target="_blank" rel="noreferrer">
+          Jared Potter
+        </a>
+        . Want to hear when new features ship (industry payments, clinical trial roles, saved searches)?{" "}
+        <a className="text-brand underline font-medium" href={SIGNUP_URL} target="_blank" rel="noreferrer">
+          Get early access
+        </a>
+        .
+      </div>
     </div>
   );
 }
