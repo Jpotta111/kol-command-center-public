@@ -10,6 +10,13 @@ const MODES = [
 
 const YEAR_OPTIONS = [3, 5, 10];
 
+const EXAMPLE_TOPICS = [
+  "heart failure with preserved ejection fraction",
+  "continuous glucose monitoring",
+  "CAR-T cell therapy lymphoma",
+  "migraine CGRP",
+];
+
 function optionFromAuthorship(a) {
   return {
     id: shortId(a.author?.id),
@@ -163,6 +170,22 @@ export default function StartStep({ client, years, setYears, onSeedsReady }) {
               value={text}
               onChange={(e) => setText(e.target.value)}
             />
+            {mode === "topic" && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="text-xs text-gray-500 self-center">Try:</span>
+                {EXAMPLE_TOPICS.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    disabled={!!busy}
+                    onClick={() => setText(t)}
+                    className="text-xs border border-gray-300 rounded-full px-3 py-1 hover:border-brand hover:text-brand disabled:opacity-40"
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            )}
             <button
               type="submit"
               disabled={!text.trim() || !!busy}

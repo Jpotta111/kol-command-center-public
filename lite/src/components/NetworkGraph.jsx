@@ -20,12 +20,11 @@ export default function NetworkGraph({ people, edges, selectedId, onSelect }) {
     svg.attr("viewBox", [0, 0, width, height]);
 
     const g = svg.append("g");
-    svg.call(
-      d3
-        .zoom()
-        .scaleExtent([0.2, 6])
-        .on("zoom", (e) => g.attr("transform", e.transform))
-    );
+    const zoom = d3
+      .zoom()
+      .scaleExtent([0.2, 6])
+      .on("zoom", (e) => g.attr("transform", e.transform));
+    svg.call(zoom);
 
     const nodes = people.map((p) => ({ ...p }));
     const topShared = new Set(people.filter((p) => p.category === "shared").slice(0, 20).map((p) => p.id));
@@ -83,10 +82,10 @@ export default function NetworkGraph({ people, edges, selectedId, onSelect }) {
         d3
           .forceLink(links)
           .id((d) => d.id)
-          .distance((l) => (l.source.isSeed && l.target.isSeed ? 140 : 70))
+          .distance((l) => (l.source.isSeed && l.target.isSeed ? 180 : 95))
           .strength(0.4)
       )
-      .force("charge", d3.forceManyBody().strength((d) => (d.isSeed ? -420 : -60)))
+      .force("charge", d3.forceManyBody().strength((d) => (d.isSeed ? -600 : -140)))
       .force("center", d3.forceCenter(width / 2, height / 2))
       .force("collide", d3.forceCollide().radius((d) => radius(d) + 3))
       .on("tick", () => {
@@ -97,6 +96,19 @@ export default function NetworkGraph({ people, edges, selectedId, onSelect }) {
           .attr("y2", (d) => d.target.y);
         node.attr("cx", (d) => d.x).attr("cy", (d) => d.y);
         label.attr("x", (d) => d.x).attr("y", (d) => d.y - radius(d) - 4);
+      })
+      .on("end", () => {
+        // Fit the finished layout to the available space.
+        const xs = nodes.map((n) => n.x);
+        const ys = nodes.map((n) => n.y);
+        const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+        const pad = 60;
+        const k = Math.min(2, 0.95 / Math.max((x1 - x0 + pad * 2) / width, (y1 - y0 + pad * 2) / height));
+        const t = d3.zoomIdentity
+          .translate(width / 2, height / 2)
+          .scale(k)
+          .translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
+        svg.transition().duration(600).call(zoom.transform, t);
       });
 
     node.call(
