@@ -6,8 +6,9 @@ import ConfirmSeeds from "./components/ConfirmSeeds";
 import NetworkGraph from "./components/NetworkGraph";
 import PeopleTable from "./components/PeopleTable";
 import PersonPanel from "./components/PersonPanel";
+import Insights from "./components/Insights";
 import { createClient, recentWorks, authorsByIds } from "./lib/openalex";
-import { buildNetwork, enrichPeople, rankPeople, toCsvRows } from "./lib/network";
+import { buildNetwork, enrichPeople, rankPeople, toCsvRows, computeInsights } from "./lib/network";
 import { loadSavedKeys, persistKeys } from "./lib/storage";
 import { downloadText, rowsToCsv } from "./lib/csv";
 
@@ -72,14 +73,16 @@ export default function App() {
         worksBySeed.set(s.id, await recentWorks(client, s.id, { fromYear, maxWorks: 200 }));
       }
       setProgress("Finding shared collaborators");
-      const { people, edges } = buildNetwork(uniqueSeeds, worksBySeed);
+      const { people, edges, sharedMin } = buildNetwork(uniqueSeeds, worksBySeed);
       setProgress(`Looking up profiles for ${people.length} people`);
       const records = await authorsByIds(
         client,
         people.map((p) => p.id)
       );
       const enriched = rankPeople(enrichPeople(people, records));
-      setResult({ people: enriched, edges, fromYear, source });
+      const names = new Map(enriched.filter((p) => p.isSeed).map((p) => [p.id, p.display_name]));
+      const insights = computeInsights(enriched, edges, names);
+      setResult({ people: enriched, edges, fromYear, source, sharedMin, insights });
       setStep("results");
     } catch (e) {
       setRunError(e.message || String(e));
@@ -252,9 +255,15 @@ export default function App() {
                 </button>
               </div>
             </div>
+            <Insights
+              insights={result.insights}
+              sharedMin={result.sharedMin}
+              seedCount={stats.seeds}
+              onSelect={onSelect}
+            />
             {stats.shared === 0 && (
               <p className="bg-amber-50 text-amber-800 text-sm px-4 sm:px-6 py-2 border-b border-amber-200">
-                No shared collaborators found. Try more starting researchers or a longer time window.
+                No shared collaborators found at this threshold. Try a longer time window, or start from researchers in the same field.
               </p>
             )}
             <div className="flex-1 min-h-0 flex flex-col lg:flex-row">

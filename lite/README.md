@@ -7,7 +7,7 @@ Find the researchers connected to the experts you care about. Start from a publi
 1. **Add your keys.** A free [OpenAlex](https://openalex.org) key is recommended. A free [Google AI Studio](https://aistudio.google.com/apikey) key is optional, for AI briefs. The app shows step-by-step instructions for both.
 2. **Pick a starting point.** Paste a DOI or paper title, type a topic, or upload a CSV with a `name` column (optional `institution` and `orcid`).
 3. **Confirm the people.** Name matches are labeled by confidence so you can fix wrong matches.
-4. **Explore.** Network view, searchable list, per-person panel with joint papers, h-index, topics, ORCID and PubMed links, and an optional AI brief.
+4. **Explore.** Key takeaways (best connectors, where shared collaborators sit, which of your researchers already work together, and who sits outside the network), network view, searchable list, per-person panel with joint papers, h-index, topics, ORCID and PubMed links, and an optional AI brief.
 
 ## Privacy and keys
 
@@ -34,7 +34,8 @@ npm run dev
 
 - Up to 25 starting researchers per search, and papers from the last 3, 5 or 10 years (up to 200 per person).
 - Papers with more than 30 authors are skipped when building connections, so large consortium papers do not swamp the results.
-- The list and CSV keep the top 300 shared collaborators and the top 60 other collaborators. The graph shows the starting researchers plus the top 120 of those.
+- "Shared collaborator" means someone who works with at least 2 of your researchers (up to 4 starting researchers), 3 (5 to 10) or 4 (11 or more), so big lists stay focused.
+- The list and CSV keep the top 150 shared collaborators and the top 100 other collaborators. The graph shows the starting researchers plus the top 120 of those.
 - Author data comes from OpenAlex and can merge or split people with similar names. Always confirm identity before outreach.
 
 Data: [OpenAlex](https://openalex.org) (CC0).

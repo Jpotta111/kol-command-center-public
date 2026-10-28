@@ -53,6 +53,7 @@ export default function PeopleTable({ people, seedNames, selectedId, onSelect })
               <th className="text-left px-3 py-2 hidden md:table-cell">Institution</th>
               <th className="text-left px-3 py-2">Connected to</th>
               <th className="text-right px-3 py-2">Joint papers</th>
+              <th className="text-right px-3 py-2 hidden lg:table-cell">Latest joint paper</th>
               <th className="text-right px-3 py-2 hidden sm:table-cell">h-index</th>
             </tr>
           </thead>
@@ -81,6 +82,7 @@ export default function PeopleTable({ people, seedNames, selectedId, onSelect })
                         .join(", ")}${p.seedsConnected.length > 2 ? "..." : ""}`}
                 </td>
                 <td className="px-3 py-2 text-right">{p.isSeed ? "" : p.jointPapers.length}</td>
+                <td className="px-3 py-2 text-right hidden lg:table-cell">{p.isSeed ? "" : p.lastJointYear || "-"}</td>
                 <td className="px-3 py-2 text-right hidden sm:table-cell">{p.h_index ?? "-"}</td>
               </tr>
             ))}
