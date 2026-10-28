@@ -12,9 +12,26 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlencode
 
+import os
+
 import requests
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
+
+# Load .env from the repo root if present (OPENALEX_API_KEY, OPENALEX_EMAIL)
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
+
+def auth_params() -> dict:
+    """Return the user's own OpenAlex API key as a query param, if set.
+
+    OpenAlex works without a key for small runs, but a free key is required
+    to page past the first page of results and gives a larger daily budget.
+    Get one free at https://openalex.org (account settings).
+    """
+    key = os.environ.get("OPENALEX_API_KEY", "").strip()
+    return {"api_key": key} if key else {}
 
 BASE_URL = "https://api.openalex.org"
 PER_PAGE = 200
@@ -99,6 +116,7 @@ def _fetch_recent_work_titles(
             "select": "id,title,publication_year",
             "sort": "publication_year:desc",
             "mailto": email,
+            **auth_params(),
         }
         url = f"{BASE_URL}/works?{urlencode(params)}"
 
@@ -173,6 +191,7 @@ def fetch_authors(
             "cursor": cursor,
             "sort": "cited_by_count:desc",
             "mailto": email,
+            **auth_params(),
         }
         url = f"{BASE_URL}/authors?{urlencode(params)}"
 
@@ -183,6 +202,9 @@ def fetch_authors(
         for attempt in range(3):
             try:
                 resp = requests.get(url, timeout=30)
+                if resp.status_code == 401 and page > 0:
+                    resp = None
+                    break
                 if resp.status_code == 429:
                     wait = 2 ** attempt
                     logger.warning("Rate limited (429), waiting %ds...", wait)
@@ -196,6 +218,15 @@ def fetch_authors(
                     raise
                 time.sleep(2 ** attempt)
         else:
+            break
+
+        if resp is None:
+            logger.warning(
+                "OpenAlex requires an API key to fetch more than one page of "
+                "results. Continuing with the %d authors collected so far. "
+                "Add a free OPENALEX_API_KEY to your .env to fetch more.",
+                len(authors),
+            )
             break
 
         data = resp.json()

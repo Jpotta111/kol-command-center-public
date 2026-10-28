@@ -79,7 +79,7 @@ export default function SettingsModal({ open, onClose }) {
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-primary focus:border-transparent"
             />
             <p className="text-xs text-gray-400 mt-1">
-              Used for the OpenAlex polite pool (faster rate limits).
+              Optional. Identifies you to OpenAlex. Stored in this browser only.
             </p>
           </div>
         </div>

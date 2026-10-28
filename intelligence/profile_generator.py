@@ -63,6 +63,9 @@ def _fetch_work_titles(openalex_id: str, n: int = 20) -> list[str]:
         "sort": "publication_year:desc",
         "mailto": os.environ.get("OPENALEX_EMAIL") or "your_email@example.com",
     }
+    openalex_key = os.environ.get("OPENALEX_API_KEY", "").strip()
+    if openalex_key:
+        params["api_key"] = openalex_key
     url = f"https://api.openalex.org/works?{urlencode(params)}"
 
     try:
