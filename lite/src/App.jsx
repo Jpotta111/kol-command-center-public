@@ -11,6 +11,7 @@ import { createClient, recentWorks, authorsByIds } from "./lib/openalex";
 import { buildNetwork, enrichPeople, rankPeople, toCsvRows, computeInsights } from "./lib/network";
 import { loadSavedKeys, persistKeys } from "./lib/storage";
 import { downloadText, rowsToCsv } from "./lib/csv";
+import { SIGNUP_URL, LINKEDIN_URL, REPO_URL } from "./config";
 
 const STEPS = [
   ["keys", "Keys"],
@@ -19,7 +20,6 @@ const STEPS = [
   ["results", "Results"],
 ];
 
-const REPO_URL = "https://github.com/Jpotta111/kol-command-center-public";
 
 export default function App() {
   const [step, setStep] = useState("welcome");
@@ -255,6 +255,14 @@ export default function App() {
                 </button>
               </div>
             </div>
+            <div className="bg-brand-soft border-b border-brand/20 px-4 sm:px-6 py-2 text-sm flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span className="text-brand-dark">
+                Was this useful? I'm building more free tools like this for Medical Affairs and clinical teams.
+              </span>
+              <a href={SIGNUP_URL} target="_blank" rel="noreferrer" className="font-semibold text-brand underline">
+                Get early access to new features
+              </a>
+            </div>
             <Insights
               insights={result.insights}
               sharedMin={result.sharedMin}
@@ -309,7 +317,12 @@ export default function App() {
           <a className="underline" href={REPO_URL} target="_blank" rel="noreferrer">
             Open source
           </a>
-          <span>Built in public by Jared Potter</span>
+          <a className="underline" href={LINKEDIN_URL} target="_blank" rel="noreferrer">
+            Built in public by Jared Potter
+          </a>
+          <a className="underline" href={SIGNUP_URL} target="_blank" rel="noreferrer">
+            Get updates
+          </a>
         </footer>
       )}
     </div>

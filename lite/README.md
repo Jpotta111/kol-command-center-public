@@ -12,6 +12,7 @@ Find the researchers connected to the experts you care about. Start from a publi
 ## Privacy and keys
 
 - It is a static website. There is no backend, database or server-side key.
+- Anonymous page-view counts use Vercel Web Analytics (no cookies). Searches, keys and files are never sent to it.
 - Keys are held in memory, or in this browser's local storage only if the user ticks "Remember my keys on this device".
 - Requests go directly from the browser to OpenAlex, and to Google only when someone asks for an AI brief.
 - Uploaded CSV files are read in the browser and never sent anywhere.
