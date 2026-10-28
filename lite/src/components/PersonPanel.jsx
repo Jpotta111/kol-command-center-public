@@ -7,7 +7,7 @@ function doiUrl(doi) {
   return doi.startsWith("http") ? doi : `https://doi.org/${doi}`;
 }
 
-export default function PersonPanel({ person, seedNames, geminiKey, onClose, onOpenKeys, onSelect }) {
+export default function PersonPanel({ person, seedNames, geminiKey, guard, onClose, onOpenKeys, onSelect }) {
   const [brief, setBrief] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -127,7 +127,7 @@ export default function PersonPanel({ person, seedNames, geminiKey, onClose, onO
             <div className="mt-2 text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{brief}</div>
           ) : geminiKey ? (
             <button
-              onClick={makeBrief}
+              onClick={() => (guard ? guard("brief", makeBrief) : makeBrief())}
               disabled={loading}
               className="mt-2 w-full bg-brand text-white text-sm font-medium rounded-lg py-2 hover:bg-brand-dark disabled:opacity-50"
             >

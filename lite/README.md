@@ -13,6 +13,7 @@ Find the researchers connected to the experts you care about. Start from a publi
 
 - It is a static website. There is no backend, database or server-side key.
 - Anonymous page-view counts use Vercel Web Analytics (no cookies). Searches, keys and files are never sent to it.
+- Email signup: the first search is free; exporting, AI briefs and further searches ask for an email and role, which are posted to a Google Form. Set `GATE_MODE` in `src/config.js` to `"entry"`, `"after-first-search"` or `"off"`. This is a convenience gate, not security: the code is open source and runs locally without it.
 - Keys are held in memory, or in this browser's local storage only if the user ticks "Remember my keys on this device".
 - Requests go directly from the browser to OpenAlex, and to Google only when someone asks for an AI brief.
 - Uploaded CSV files are read in the browser and never sent anywhere.
