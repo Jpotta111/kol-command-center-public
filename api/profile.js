@@ -147,18 +147,17 @@ export default async function handler(req, res) {
   }
 
   try {
-    const apiKey = req.headers["x-gemini-key"]
-      || process.env.GEMINI_API_KEY
-      || "";
+    // Bring your own key: the caller must send their own Gemini key.
+    // There is intentionally no server-side fallback key, so a public
+    // deployment can never spend the deployer's credits.
+    const apiKey = req.headers["x-gemini-key"] || "";
     if (!apiKey) {
       res.writeHead(401, { ...corsHeaders, "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "Gemini API key required. Please add it in Settings." }));
       return;
     }
 
-    const email = req.headers["x-openalex-email"]
-      || process.env.OPENALEX_EMAIL
-      || "";
+    const email = req.headers["x-openalex-email"] || "";
 
     // Parse JSON body
     let body;

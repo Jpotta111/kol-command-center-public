@@ -25,7 +25,7 @@ from urllib.parse import urlencode
 import networkx as nx
 import requests
 
-from pipeline.openalex_client import fetch_authors, load_config
+from pipeline.openalex_client import auth_params, fetch_authors, load_config
 from pipeline.open_payments_client import lookup_payments
 
 logger = logging.getLogger(__name__)
@@ -97,6 +97,7 @@ def _fetch_coauthorships(
             "per_page": 200,
             "select": "id,authorships",
             "mailto": email,
+            **auth_params(),
         }
         url = f"https://api.openalex.org/works?{urlencode(params)}"
 

@@ -29,6 +29,18 @@ The dashboard has no authentication. Do not deploy it publicly with real data.
 
 The proprietary scoring methodology is not included. `pipeline/ops_scorer.py` is an interface stub that raises `NotImplementedError`. When the stub is unimplemented, the pipeline prints a message and falls back to `pipeline/example_scorer.py`, a simple generic example (normalized h-index, citations, and PageRank blended into a 0-100 score with tiers A/B/C/D). The example scorer is illustrative only and is not a validated methodology. To use your own logic, implement the two functions in `ops_scorer.py`.
 
+## Your keys
+
+This project never ships with anyone's API keys. You use your own, and they stay on your computer (in `.env` for the Python pipeline, or in your browser for the dashboard).
+
+| Key | Needed? | What it does | Where to get it |
+|---|---|---|---|
+| `OPENALEX_API_KEY` | Recommended | Without it you can run small searches (about the first 200 authors). With it you can page through more results and get a larger daily budget. | Free. Sign in at [openalex.org](https://openalex.org), open account settings, create a key. |
+| `OPENALEX_EMAIL` | Optional | Identifies you to OpenAlex. | Your email. |
+| `GEMINI_API_KEY` | Optional | Only for AI-written profiles. | Free tier at [aistudio.google.com](https://aistudio.google.com). |
+
+Never commit your `.env` file. It is already in `.gitignore`.
+
 ## Quick start
 
 Python 3.10 or newer is required.
@@ -39,7 +51,7 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
 # Configure
-cp .env.example .env   # add your GEMINI_API_KEY and OPENALEX_EMAIL
+cp .env.example .env   # add your own keys (see "Your keys" below)
 # Also set polite_email in config/ops_config.json
 
 # Run the pipeline (20 authors for testing, skipping payment lookups)
@@ -59,7 +71,7 @@ If no data files are present, the dashboard shows fictional sample data from `da
 
 To use CMS Open Payments lookups, run `python -m pipeline.download_cms_data --years 2024` first (large download), then run the pipeline without `--skip-payments`.
 
-The "Generate AI profile" button calls `/api/profile`, which needs a Vercel-style runtime (for example `vercel dev`) and a Gemini key, supplied in Settings or as the `GEMINI_API_KEY` environment variable.
+The "Generate AI profile" button calls `/api/profile`, which needs a Vercel-style runtime (for example `vercel dev`) and your own Gemini key entered in Settings. The function has no server-side key, so a deployment never spends the deployer's credits.
 
 ## Architecture
 
