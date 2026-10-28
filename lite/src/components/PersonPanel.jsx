@@ -150,7 +150,7 @@ export default function PersonPanel({ person, seedNames, geminiKey, onClose, onO
           <a className="text-brand underline" href={`https://openalex.org/${person.id}`} target="_blank" rel="noreferrer">
             OpenAlex profile
           </a>
-          {person.orcid && (
+          {person.orcid?.startsWith("https://") && (
             <a className="text-brand underline" href={person.orcid} target="_blank" rel="noreferrer">
               ORCID
             </a>

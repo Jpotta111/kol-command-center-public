@@ -71,5 +71,5 @@ export function downloadText(text, filename, type = "text/csv;charset=utf-8;") {
 }
 
 export function rowsToCsv(rows) {
-  return Papa.unparse(rows);
+  return Papa.unparse(rows, { escapeFormulae: true });
 }

@@ -78,7 +78,7 @@ export function createClient({ apiKey = "", email = "", onCost } = {}) {
       const cost = Number(body?.meta?.cost_usd);
       if (Number.isFinite(cost) && cost > 0) {
         totalCost += cost;
-        onCost?.(totalCost);
+        onCost?.(totalCost, cost);
       }
       return body;
     }
@@ -102,11 +102,11 @@ export async function testOpenAlexKey(apiKey) {
 
 // ---------- Inputs ----------
 
-const DOI_RE = /10\.\d{4,9}\/\S+/i;
+const DOI_RE = /10\.\d{4,9}\/[^\s?#]+/i;
 
 export function extractDoi(text) {
   const m = String(text || "").match(DOI_RE);
-  return m ? m[0].replace(/[.,;)\]]+$/, "") : null;
+  return m ? m[0].replace(/[.,;\]]+$/, "") : null;
 }
 
 /** Find a paper by DOI, OpenAlex work ID or URL, or title search. Returns a list of candidates. */
@@ -115,7 +115,7 @@ export async function findPapers(client, input) {
   if (!text) return [];
   const doi = extractDoi(text);
   if (doi) {
-    const w = await client.get(`/works/doi:${doi}`, { select: WORK_SELECT });
+    const w = await client.get(`/works/doi:${encodeURIComponent(doi)}`, { select: WORK_SELECT });
     return [w];
   }
   const wid = text.match(/\bW\d{4,}\b/i);
@@ -185,7 +185,9 @@ export async function matchAuthor(client, { name, institution, orcid, openalexId
   const results = data.results || [];
   const inst = String(institution || "").toLowerCase();
   const scored = results.map((a) => {
-    const insts = (a.last_known_institutions || []).map((i) => (i.display_name || "").toLowerCase());
+    const insts = (a.last_known_institutions || [])
+      .map((i) => (i.display_name || "").toLowerCase())
+      .filter(Boolean);
     const instHit = inst && insts.some((x) => x.includes(inst) || inst.includes(x));
     return { author: a, instHit, works: a.works_count || 0 };
   });

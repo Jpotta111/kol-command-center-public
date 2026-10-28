@@ -31,7 +31,7 @@ Institution: ${person.institution || "unknown"}
 h-index: ${person.h_index ?? "unknown"}; total works: ${person.works_count ?? "unknown"}; total citations: ${person.cited_by_count ?? "unknown"}
 Main topics: ${(person.topics || []).join(", ") || "unknown"}
 ${person.isSeed ? "This is one of the user's starting researchers." : `Connected to the user's researchers: ${connected.join(", ")}`}
-${person.isSeed ? "Recent papers:" : "Papers they share with those researchers:"}
+${person.isSeed ? "Papers they share with the user's other starting researchers:" : "Papers they share with those researchers:"}
 ${papers || "(none listed)"}
 
 Write a short brief in plain language with these headings:

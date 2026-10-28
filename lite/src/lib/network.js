@@ -40,6 +40,11 @@ export function buildNetwork(seeds, worksBySeed, { maxAuthorsPerPaper = 30, maxO
 
   for (const s of seeds) ensure(shortId(s.id), s.display_name, s.institution);
 
+  // Papers shared by two starting researchers, keyed by the sorted ID pair and merged from
+  // both researchers' paper lists (each list is capped, so one side may miss a paper).
+  const seedPairs = new Map();
+  const pairKey = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+
   for (const seed of seeds) {
     const sid = shortId(seed.id);
     for (const w of worksBySeed.get(sid) || []) {
@@ -49,10 +54,28 @@ export function buildNetwork(seeds, worksBySeed, { maxAuthorsPerPaper = 30, maxO
       for (const a of auths) {
         const id = shortId(a.author?.id);
         if (!id || id === sid) continue;
+        if (seedIds.has(id)) {
+          const k = pairKey(id, sid);
+          if (!seedPairs.has(k)) seedPairs.set(k, new Map());
+          seedPairs.get(k).set(ref.id, ref);
+          continue;
+        }
         const p = ensure(id, a.author?.display_name, a.institutions?.[0]?.display_name);
         if (!p.links.has(sid)) p.links.set(sid, new Map());
         p.links.get(sid).set(ref.id, ref);
       }
+    }
+  }
+
+  for (const [k, works] of seedPairs) {
+    const [a, b] = k.split("|");
+    for (const [x, y] of [
+      [a, b],
+      [b, a],
+    ]) {
+      const p = people.get(x);
+      if (!p.links.has(y)) p.links.set(y, new Map());
+      for (const [wid, ref] of works) p.links.get(y).set(wid, ref);
     }
   }
 
@@ -84,11 +107,14 @@ export function buildNetwork(seeds, worksBySeed, { maxAuthorsPerPaper = 30, maxO
 
   const edges = [];
   for (const p of kept) {
+    if (p.isSeed) continue;
     for (const [sid, works] of p.links) {
-      if (!keptIds.has(sid)) continue;
-      if (p.isSeed && p.id > sid) continue; // one edge per seed pair
-      edges.push({ source: sid, target: p.id, weight: works.size });
+      if (keptIds.has(sid)) edges.push({ source: sid, target: p.id, weight: works.size });
     }
+  }
+  for (const [k, works] of seedPairs) {
+    const [a, b] = k.split("|");
+    edges.push({ source: a, target: b, weight: works.size });
   }
 
   return { people: kept, edges };

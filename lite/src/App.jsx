@@ -38,7 +38,7 @@ export default function App() {
       createClient({
         apiKey: keys.openalexKey.trim(),
         email: keys.email.trim(),
-        onCost: (total) => setCost(total),
+        onCost: (_total, delta) => setCost((c) => c + delta),
       }),
     [keys.openalexKey, keys.email]
   );
@@ -96,7 +96,7 @@ export default function App() {
   }
 
   // Big networks become unreadable, so the graph shows the starting researchers plus the
-  // top-ranked collaborators. The list and the CSV export always include everyone.
+  // top-ranked collaborators. The list and the CSV export include every person kept by buildNetwork.
   const GRAPH_LIMIT = 120;
   const graphData = useMemo(() => {
     if (!result) return null;
@@ -120,7 +120,11 @@ export default function App() {
     <div className="h-full flex flex-col">
       <header className="bg-white border-b border-gray-200 shrink-0">
         <div className="px-4 sm:px-6 h-14 flex items-center gap-4">
-          <button onClick={() => setStep("welcome")} className="font-bold text-ink tracking-tight">
+          <button
+            onClick={() => setStep("welcome")}
+            disabled={step === "running"}
+            className="font-bold text-ink tracking-tight"
+          >
             KOL Discover <span className="text-brand">Lite</span>
           </button>
           {step !== "welcome" && (
@@ -147,7 +151,7 @@ export default function App() {
                 OpenAlex usage: ${cost.toFixed(4)}
               </span>
             )}
-            {step !== "welcome" && step !== "keys" && (
+            {step !== "welcome" && step !== "keys" && step !== "running" && (
               <button onClick={() => setStep("keys")} className="text-brand underline">
                 Keys
               </button>
@@ -171,6 +175,7 @@ export default function App() {
             onSeedsReady={(rows, src) => {
               setSeedRows(rows);
               setSource(src);
+              setRunError("");
               setStep("confirm");
             }}
           />
@@ -275,6 +280,7 @@ export default function App() {
               </div>
               {selected && (
                 <PersonPanel
+                  key={selected.id}
                   person={selected}
                   seedNames={seedNames}
                   geminiKey={keys.geminiKey.trim()}

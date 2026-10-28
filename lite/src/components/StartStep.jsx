@@ -38,7 +38,7 @@ export default function StartStep({ client, years, setYears, onSeedsReady }) {
 
   const fromYear = new Date().getFullYear() - years;
 
-  function useWork(w, label) {
+  function chooseWork(w, label) {
     const auths = (w.authorships || []).filter((a) => a.author?.id);
     if (!auths.length) {
       setError("That paper has no linked authors in OpenAlex. Try another.");
@@ -51,14 +51,17 @@ export default function StartStep({ client, years, setYears, onSeedsReady }) {
       selected: 0,
       include: true,
     }));
-    onSeedsReady(rows, { label, kind: "paper" });
+    onSeedsReady(rows, {
+      label: auths.length > 25 ? `${label} (first 25 of ${auths.length} authors)` : label,
+      kind: "paper",
+    });
   }
 
   async function runPaper() {
     setBusy("Looking up the paper");
     const works = await findPapers(client, text);
     if (!works.length) throw new Error("No matching paper found. Try the DOI.");
-    if (works.length === 1) useWork(works[0], works[0].title);
+    if (works.length === 1) chooseWork(works[0], works[0].title);
     else setPaperChoices(works);
   }
 
@@ -97,7 +100,7 @@ export default function StartStep({ client, years, setYears, onSeedsReady }) {
         confidence: matches[0]?.confidence || "none",
         options: matches.map((m) => optionFromAuthor(m.author)),
         selected: 0,
-        include: matches.length > 0,
+        include: matches.length > 0 && matches[0].confidence !== "low",
       });
     }
     onSeedsReady(rows, { label: file.name, kind: "csv" });
@@ -125,6 +128,7 @@ export default function StartStep({ client, years, setYears, onSeedsReady }) {
         {MODES.map((m) => (
           <button
             key={m.id}
+            disabled={!!busy}
             onClick={() => {
               setMode(m.id);
               setError("");
@@ -175,10 +179,15 @@ export default function StartStep({ client, years, setYears, onSeedsReady }) {
               <code className="bg-gray-100 px-1 rounded">orcid</code> (exact match). Up to 25 people.
             </p>
             <div className="mt-4 flex flex-wrap items-center gap-3">
-              <label className="bg-brand text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-brand-dark cursor-pointer">
+              <label
+                className={`bg-brand text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-brand-dark ${
+                  busy ? "opacity-40 pointer-events-none" : "cursor-pointer"
+                }`}
+              >
                 Upload CSV
                 <input
                   type="file"
+                  disabled={!!busy}
                   accept=".csv,text/csv"
                   className="hidden"
                   onChange={(e) => {
@@ -235,7 +244,7 @@ export default function StartStep({ client, years, setYears, onSeedsReady }) {
             {paperChoices.map((w) => (
               <li key={w.id}>
                 <button
-                  onClick={() => useWork(w, w.title)}
+                  onClick={() => chooseWork(w, w.title)}
                   className="w-full text-left bg-white border border-gray-200 rounded-lg px-4 py-3 hover:border-brand"
                 >
                   <p className="text-sm font-medium text-ink">{w.title}</p>
