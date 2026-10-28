@@ -1,5 +1,7 @@
 # KOL Command Center
 
+> **Not a coder?** Try [KOL Discover Lite](lite/), a no-install browser version: start from a paper, a topic or your own CSV and map shared collaborators with your own free keys.
+
 A Key Opinion Leader (KOL) discovery and profiling tool built on public data: OpenAlex and CMS Open Payments. Co-authorship graphs are built with NetworkX, profiles are generated with Gemini, and the dashboard uses React and D3.js.
 
 The included configuration is a demo for type 2 diabetes and metabolic health. Change the topic IDs and keywords in `config/ops_config.json` to target another area.
