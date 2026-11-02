@@ -9,7 +9,7 @@ function Card({ title, children }) {
   );
 }
 
-export default function Insights({ insights, sharedMin, seedCount, onSelect }) {
+export default function Insights({ insights, sharedMin, seedCount, onSelect, evidenceTop, evidenceStatus, fromYear }) {
   const [open, setOpen] = useState(true);
   if (!insights) return null;
   const { connectors, institutions, pairs, isolated, activeShared } = insights;
@@ -20,7 +20,7 @@ export default function Insights({ insights, sharedMin, seedCount, onSelect }) {
         {open ? "Hide" : "Show"} key takeaways
       </button>
       {open && (
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5">
           <Card title="Best connectors">
             {connectors.length ? (
               <ol className="space-y-1">
@@ -35,6 +35,31 @@ export default function Insights({ insights, sharedMin, seedCount, onSelect }) {
               </ol>
             ) : (
               <p className="text-gray-500">Nobody works with two or more of your starting researchers yet.</p>
+            )}
+          </Card>
+
+          <Card title="Who writes the evidence">
+            {evidenceTop ? (
+              evidenceTop.length ? (
+                <ol className="space-y-1">
+                  {evidenceTop.map(({ p, s }) => (
+                    <li key={p.id}>
+                      <button onClick={() => onSelect(p.id)} className="text-left hover:text-brand">
+                        <span className="font-medium">{p.display_name}</span>
+                        <span className="text-gray-500">
+                          {" "}
+                          {s.guidelines} guideline{s.guidelines === 1 ? "" : "s"}, {s.trials} trial{s.trials === 1 ? "" : "s"}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                  <li className="text-[11px] text-gray-400 pt-1">From PubMed, papers since {fromYear}.</li>
+                </ol>
+              ) : (
+                <p className="text-gray-500">No guideline or trial authors found among the top people since {fromYear}.</p>
+              )
+            ) : (
+              <p className="text-gray-500">{evidenceStatus || "Checking PubMed..."}</p>
             )}
           </Card>
 

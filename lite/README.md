@@ -7,7 +7,7 @@ Find the researchers connected to the experts you care about. Start from a publi
 1. **Add your keys.** A free [OpenAlex](https://openalex.org) key is recommended. A free [Google AI Studio](https://aistudio.google.com/apikey) key is optional, for AI briefs. The app shows step-by-step instructions for both.
 2. **Pick a starting point.** Paste a DOI or paper title, type a topic, or upload a CSV with a `name` column (optional `institution` and `orcid`).
 3. **Confirm the people.** Name matches are labeled by confidence so you can fix wrong matches.
-4. **Explore.** Key takeaways (best connectors, where shared collaborators sit, which of your researchers already work together, and who sits outside the network), network view, searchable list, per-person panel with joint papers, h-index, topics, ORCID and PubMed links, and an optional AI brief.
+4. **Explore.** Key takeaways (best connectors, where shared collaborators sit, which of your researchers already work together, and who sits outside the network), network view, searchable list, per-person panel with joint papers, h-index, topics, the evidence they author from PubMed (guidelines, clinical trials, systematic reviews, reviews, observational studies), ORCID and PubMed links, and an optional AI brief.
 
 ## Privacy and keys
 
@@ -15,7 +15,7 @@ Find the researchers connected to the experts you care about. Start from a publi
 - Anonymous page-view counts use Vercel Web Analytics (no cookies). Searches, keys and files are never sent to it.
 - Email signup: the first search is free; exporting, AI briefs and further searches ask for an email and role, which are posted to a Google Form. Set `GATE_MODE` in `src/config.js` to `"entry"`, `"after-first-search"` or `"off"`. This is a convenience gate, not security: the code is open source and runs locally without it.
 - Keys are held in memory, or in this browser's local storage only if the user ticks "Remember my keys on this device".
-- Requests go directly from the browser to OpenAlex, and to Google only when someone asks for an AI brief.
+- Requests go directly from the browser to OpenAlex and PubMed (NCBI E-utilities, no key needed), and to Google only when someone asks for an AI brief.
 - Uploaded CSV files are read in the browser and never sent anywhere.
 - OpenAlex usage is billed to the user's own free daily allowance. The header shows the running cost for the session.
 
@@ -38,6 +38,7 @@ npm run dev
 - Papers with more than 30 authors are skipped when building connections, so large consortium papers do not swamp the results.
 - "Shared collaborator" means someone who works with at least 2 of your researchers (up to 4 starting researchers), 3 (5 to 10) or 4 (11 or more), so big lists stay focused.
 - The list and CSV keep the top 150 shared collaborators and the top 100 other collaborators. The graph shows the starting researchers plus the top 120 of those.
+- PubMed evidence counts cover the starting researchers and the top 40 collaborators, using PubMed IDs that OpenAlex links to each author, so there is no name guessing. Only PubMed-indexed papers are counted.
 - Author data comes from OpenAlex and can merge or split people with similar names. Always confirm identity before outreach.
 
 Data: [OpenAlex](https://openalex.org) (CC0).

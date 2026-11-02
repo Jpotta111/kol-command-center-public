@@ -17,7 +17,7 @@ export async function testGeminiKey(key) {
   }
 }
 
-function buildPrompt(person, seedNames) {
+function buildPrompt(person, seedNames, evidence) {
   const connected = person.seedsConnected.map((id) => seedNames.get(id) || id);
   const papers = person.jointPapers
     .slice(0, 12)
@@ -30,6 +30,7 @@ Researcher: ${person.display_name}
 Institution: ${person.institution || "unknown"}
 h-index: ${person.h_index ?? "unknown"}; total works: ${person.works_count ?? "unknown"}; total citations: ${person.cited_by_count ?? "unknown"}
 Main topics: ${(person.topics || []).join(", ") || "unknown"}
+${evidence && evidence.indexed ? `PubMed since the search window: ${evidence.guidelines} guidelines, ${evidence.trials} clinical trials, ${evidence.meta} systematic reviews or meta-analyses, out of ${evidence.indexed} indexed papers` : ""}
 ${person.isSeed ? "This is one of the user's starting researchers." : `Connected to the user's researchers: ${connected.join(", ")}`}
 ${person.isSeed ? "Papers they share with the user's other starting researchers:" : "Papers they share with those researchers:"}
 ${papers || "(none listed)"}
@@ -41,12 +42,12 @@ Conversation starters (2 bullets, each tied to a specific paper above)
 Keep it under 140 words. No em dashes.`;
 }
 
-export async function summarizePerson(key, person, seedNames) {
+export async function summarizePerson(key, person, seedNames, evidence) {
   const resp = await fetch(`${BASE}/models/${MODEL}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": key },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: buildPrompt(person, seedNames) }] }],
+      contents: [{ parts: [{ text: buildPrompt(person, seedNames, evidence) }] }],
       generationConfig: { temperature: 0.3, maxOutputTokens: 800 },
     }),
   });

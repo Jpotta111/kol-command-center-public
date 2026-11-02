@@ -6,9 +6,10 @@ const FILTERS = [
   ["shared", "Shared collaborators"],
   ["seed", "Your starting researchers"],
   ["other", "Other collaborators"],
+  ["evidence", "Guideline or trial authors"],
 ];
 
-export default function PeopleTable({ people, seedNames, selectedId, onSelect }) {
+export default function PeopleTable({ people, seedNames, selectedId, onSelect, evidence }) {
   const [filter, setFilter] = useState("all");
   const [q, setQ] = useState("");
 
@@ -16,12 +17,14 @@ export default function PeopleTable({ people, seedNames, selectedId, onSelect })
     const needle = q.trim().toLowerCase();
     return people.filter(
       (p) =>
-        (filter === "all" || p.category === filter) &&
+        (filter === "all" ||
+          p.category === filter ||
+          (filter === "evidence" && (evidence?.get(p.id)?.guidelines > 0 || evidence?.get(p.id)?.trials > 0))) &&
         (!needle ||
           p.display_name.toLowerCase().includes(needle) ||
           (p.institution || "").toLowerCase().includes(needle))
     );
-  }, [people, filter, q]);
+  }, [people, filter, q, evidence]);
 
   return (
     <div className="h-full flex flex-col">
@@ -54,6 +57,7 @@ export default function PeopleTable({ people, seedNames, selectedId, onSelect })
               <th className="text-left px-3 py-2">Connected to</th>
               <th className="text-right px-3 py-2">Joint papers</th>
               <th className="text-right px-3 py-2 hidden lg:table-cell">Latest joint paper</th>
+              <th className="text-right px-3 py-2 hidden md:table-cell" title="From PubMed">Guidelines / trials</th>
               <th className="text-right px-3 py-2 hidden sm:table-cell">h-index</th>
             </tr>
           </thead>
@@ -83,6 +87,9 @@ export default function PeopleTable({ people, seedNames, selectedId, onSelect })
                 </td>
                 <td className="px-3 py-2 text-right">{p.isSeed ? "" : p.jointPapers.length}</td>
                 <td className="px-3 py-2 text-right hidden lg:table-cell">{p.isSeed ? "" : p.lastJointYear || "-"}</td>
+                <td className="px-3 py-2 text-right hidden md:table-cell">
+                  {evidence?.get(p.id) ? `${evidence.get(p.id).guidelines} / ${evidence.get(p.id).trials}` : evidence ? "" : "..."}
+                </td>
                 <td className="px-3 py-2 text-right hidden sm:table-cell">{p.h_index ?? "-"}</td>
               </tr>
             ))}
