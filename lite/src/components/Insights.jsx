@@ -38,7 +38,7 @@ export default function Insights({ insights, sharedMin, seedCount, onSelect, evi
             )}
           </Card>
 
-          <Card title="Who writes the evidence">
+          <Card title="Top guideline and trial authors">
             {evidenceTop ? (
               evidenceTop.length ? (
                 <ol className="space-y-1">

@@ -95,7 +95,7 @@ test("evidence card, list filter, person panel and CSV use PubMed data", async (
   await searchFromCsv(page);
 
   // Takeaway card: top 5 by guidelines, then trials. Fay Zeta has neither, so she is left out.
-  const card = page.locator("div", { has: page.getByText("Who writes the evidence", { exact: true }) }).last();
+  const card = page.locator("div", { has: page.getByText("Top guideline and trial authors", { exact: true }) }).last();
   await expect(card.getByText("From PubMed, papers since")).toBeVisible();
   await expect(card.getByText(NAMES.C1)).toBeVisible();
   await expect(card.getByText("1 guideline, 1 trial").first()).toBeVisible();
