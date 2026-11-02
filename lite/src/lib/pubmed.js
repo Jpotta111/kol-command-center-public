@@ -73,8 +73,15 @@ export async function evidenceProfiles(client, people, { fromYear, onProgress } 
   const pmidsByPerson = new Map();
   let done = 0;
 
-  // 1. PubMed IDs for each person's papers, from OpenAlex.
-  for (const p of people) {
+  // 1. PubMed IDs for each person's papers, from OpenAlex (4 people at a time).
+  const queue = [...people];
+  const worker = async () => {
+    while (queue.length) {
+      const p = queue.shift();
+      await pmidsFor(p);
+    }
+  };
+  async function pmidsFor(p) {
     const id = shortId(p.id);
     const pmids = new Set();
     for (let page = 1; page <= 2; page++) {
@@ -95,6 +102,7 @@ export async function evidenceProfiles(client, people, { fromYear, onProgress } 
     done += 1;
     onProgress?.(done, people.length * 2);
   }
+  await Promise.all(Array.from({ length: Math.min(4, people.length) }, worker));
 
   // 2. Publication types from PubMed, fetched in shared batches.
   const all = [...new Set([...pmidsByPerson.values()].flat())];
