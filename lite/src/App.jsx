@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Welcome from "./components/Welcome";
 import KeySetup from "./components/KeySetup";
 import StartStep from "./components/StartStep";
@@ -14,6 +14,9 @@ import { downloadText, rowsToCsv } from "./lib/csv";
 import { SIGNUP_URL, LINKEDIN_URL, REPO_URL, GATE_MODE } from "./config";
 import SignupGate from "./components/SignupGate";
 import { isSignedUp } from "./lib/signup";
+import { evidenceProfiles, evidenceLeaders } from "./lib/pubmed";
+
+const EVIDENCE_LIMIT = 40; // non-starting people checked in PubMed, besides the starting researchers
 
 const FREE_USED = "kol_discover_lite_free_search_used_v1";
 function freeSearchUsed() {
@@ -58,6 +61,9 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [view, setView] = useState("graph");
+  const [evidence, setEvidence] = useState(null); // Map(personId -> PubMed stats)
+  const [evidenceStatus, setEvidenceStatus] = useState("");
+  const evidenceRun = useRef(0);
   const [signedUp, setSignedUp] = useState(isSignedUp);
   const [freeUsed, setFreeUsed] = useState(freeSearchUsed);
   const [gate, setGate] = useState(null);
@@ -133,8 +139,36 @@ export default function App() {
     }
   }
 
+  // After results load, check what kind of evidence the key people author (PubMed publication types).
+  useEffect(() => {
+    if (!result) return;
+    const run = ++evidenceRun.current;
+    setEvidence(null);
+    const targets = [
+      ...result.people.filter((p) => p.isSeed),
+      ...result.people.filter((p) => !p.isSeed).slice(0, EVIDENCE_LIMIT),
+    ];
+    setEvidenceStatus(`Checking PubMed for ${targets.length} people...`);
+    evidenceProfiles(client, targets, {
+      fromYear: result.fromYear,
+      onProgress: (d, t) => run === evidenceRun.current && setEvidenceStatus(`Checking PubMed for ${targets.length} people (${Math.round((100 * d) / t)}%)`),
+    })
+      .then((m) => {
+        if (run !== evidenceRun.current) return;
+        setEvidence(m);
+        setEvidenceStatus("");
+      })
+      .catch((e) => run === evidenceRun.current && setEvidenceStatus(`PubMed check stopped: ${e.message}`));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
+
+  const evidenceTop = useMemo(
+    () => (evidence && result ? evidenceLeaders(result.people, evidence) : null),
+    [evidence, result]
+  );
+
   function exportCsv() {
-    const rows = toCsvRows(result.people, seedNames);
+    const rows = toCsvRows(result.people, seedNames, evidence);
     const date = new Date().toISOString().slice(0, 10);
     downloadText(rowsToCsv(rows), `kol_network_${date}.csv`);
   }
@@ -311,6 +345,9 @@ export default function App() {
               sharedMin={result.sharedMin}
               seedCount={stats.seeds}
               onSelect={onSelect}
+              evidenceTop={evidenceTop}
+              evidenceStatus={evidenceStatus}
+              fromYear={result.fromYear}
             />
             {stats.shared === 0 && (
               <p className="bg-amber-50 text-amber-800 text-sm px-4 sm:px-6 py-2 border-b border-amber-200">
@@ -335,7 +372,7 @@ export default function App() {
                     )}
                   </div>
                 ) : (
-                  <PeopleTable people={result.people} seedNames={seedNames} selectedId={selectedId} onSelect={onSelect} />
+                  <PeopleTable people={result.people} seedNames={seedNames} selectedId={selectedId} onSelect={onSelect} evidence={evidence} />
                 )}
               </div>
               {selected && (
@@ -343,6 +380,9 @@ export default function App() {
                   key={selected.id}
                   person={selected}
                   seedNames={seedNames}
+                  evidence={evidence?.get(selected.id)}
+                  evidenceStatus={evidenceStatus}
+                  fromYear={result.fromYear}
                   geminiKey={keys.geminiKey.trim()}
                   guard={guard}
                   onClose={() => setSelectedId(null)}

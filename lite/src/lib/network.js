@@ -161,7 +161,7 @@ export function rankPeople(people) {
   });
 }
 
-export function toCsvRows(people, seedNames) {
+export function toCsvRows(people, seedNames, evidence) {
   return rankPeople(people).map((p) => ({
     name: p.display_name,
     type: p.isSeed ? "Starting researcher" : p.category === "shared" ? "Shared collaborator" : "Collaborator",
@@ -171,6 +171,12 @@ export function toCsvRows(people, seedNames) {
     kols_connected: p.isSeed ? "" : p.seedsConnected.length,
     joint_papers: p.isSeed ? "" : p.jointPapers.length,
     latest_joint_paper_year: p.isSeed ? "" : p.lastJointYear || "",
+    pubmed_guidelines: evidence?.get(p.id)?.guidelines ?? "",
+    pubmed_clinical_trials: evidence?.get(p.id)?.trials ?? "",
+    pubmed_systematic_reviews_meta: evidence?.get(p.id)?.meta ?? "",
+    pubmed_reviews: evidence?.get(p.id)?.reviews ?? "",
+    pubmed_observational: evidence?.get(p.id)?.observational ?? "",
+    pubmed_indexed_papers: evidence?.get(p.id)?.indexed ?? "",
     h_index: p.h_index ?? "",
     total_works: p.works_count ?? "",
     total_citations: p.cited_by_count ?? "",

@@ -40,7 +40,7 @@ export default function Welcome({ onStart }) {
         <p className="font-semibold text-brand-dark">Private by design</p>
         <p className="mt-1">
           Everything runs in your browser. Your keys and any file you upload stay there. Searches go straight
-          from your browser to OpenAlex, and to Google only if you turn on AI briefs. Nothing is stored on our
+          from your browser to OpenAlex and PubMed, and to Google only if you turn on AI briefs. Nothing is stored on our
           side, except the email and role you give if you sign up, which go to Jared's Google Form. We only count
           anonymous page visits (no cookies) to see whether the tool is useful. Research data comes from{" "}
           <a className="underline" href="https://openalex.org" target="_blank" rel="noreferrer">

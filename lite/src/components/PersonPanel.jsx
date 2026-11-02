@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { CATEGORY } from "./NetworkGraph";
 import { summarizePerson } from "../lib/gemini";
+import { EVIDENCE_TYPES } from "../lib/pubmed";
 
 function doiUrl(doi) {
   if (!doi) return "";
   return doi.startsWith("http") ? doi : `https://doi.org/${doi}`;
 }
 
-export default function PersonPanel({ person, seedNames, geminiKey, guard, onClose, onOpenKeys, onSelect }) {
+export default function PersonPanel({ person, seedNames, evidence, evidenceStatus, fromYear, geminiKey, guard, onClose, onOpenKeys, onSelect }) {
   const [brief, setBrief] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -24,7 +25,7 @@ export default function PersonPanel({ person, seedNames, geminiKey, guard, onClo
     setLoading(true);
     setError("");
     try {
-      setBrief(await summarizePerson(geminiKey, person, seedNames));
+      setBrief(await summarizePerson(geminiKey, person, seedNames, evidence));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -62,6 +63,30 @@ export default function PersonPanel({ person, seedNames, geminiKey, guard, onClo
               <p className="text-[11px] text-gray-500">{l}</p>
             </div>
           ))}
+        </div>
+
+        <div className="mt-4">
+          <p className="text-xs font-semibold text-gray-500">Evidence they author (PubMed, since {fromYear})</p>
+          {evidence ? (
+            evidence.indexed ? (
+              <>
+                <div className="mt-1 grid grid-cols-2 gap-1.5">
+                  {EVIDENCE_TYPES.map(([k, label]) => (
+                    <div key={k} className={`rounded px-2 py-1 text-xs ${evidence[k] ? "bg-brand-soft text-brand-dark" : "bg-gray-50 text-gray-400"}`}>
+                      <b>{evidence[k]}</b> {label}
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-1 text-[11px] text-gray-400">Out of {evidence.indexed} papers indexed in PubMed.</p>
+              </>
+            ) : (
+              <p className="mt-1 text-sm text-gray-500">No PubMed-indexed papers found in this window.</p>
+            )
+          ) : (
+            <p className="mt-1 text-sm text-gray-500">
+              {evidenceStatus ? evidenceStatus : "Checked for the starting researchers and the top 40 collaborators only."}
+            </p>
+          )}
         </div>
 
         {person.topics?.length > 0 && (
