@@ -60,6 +60,12 @@ export function createClient({ apiKey = "", email = "", onCost } = {}) {
         continue;
       }
 
+      // Passing server errors (502/503/504) are retried with backoff, like rate limits.
+      if (resp.status >= 500 && attempt < 3) {
+        await sleep(1000 * 2 ** attempt);
+        continue;
+      }
+
       const body = await resp.json().catch(() => ({}));
       if (!resp.ok) {
         const msg = String(body.error || body.message || resp.statusText || "Request failed");
