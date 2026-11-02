@@ -47,7 +47,8 @@ async function summaries(pmids) {
     for (let attempt = 0; attempt < 3 && !data; attempt++) {
       try {
         const resp = await fetch(url);
-        if (resp.status === 429) {
+        // Retry rate limits and passing server errors (502/503 etc.); give up on other errors.
+        if (resp.status === 429 || resp.status >= 500) {
           await sleep(1500 * (attempt + 1));
           continue;
         }
@@ -58,7 +59,8 @@ async function summaries(pmids) {
       }
     }
     const result = data?.result || {};
-    for (const id of batch) if (result[id]) out[id] = result[id].pubtype || [];
+    // esummary returns { uid, error } for IDs it has no record for; those are not indexed.
+    for (const id of batch) if (result[id] && !result[id].error) out[id] = result[id].pubtype || [];
     await sleep(GAP_MS);
   }
   return out;
@@ -74,11 +76,19 @@ export async function evidenceProfiles(client, people, { fromYear, onProgress } 
   let done = 0;
 
   // 1. PubMed IDs for each person's papers, from OpenAlex (4 people at a time).
+  // If one worker fails, the others stop taking new people, so no progress update
+  // arrives after the error and no extra OpenAlex calls are spent.
   const queue = [...people];
+  let failed = false;
   const worker = async () => {
-    while (queue.length) {
+    while (queue.length && !failed) {
       const p = queue.shift();
-      await pmidsFor(p);
+      try {
+        await pmidsFor(p);
+      } catch (e) {
+        failed = true;
+        throw e;
+      }
     }
   };
   async function pmidsFor(p) {
@@ -98,6 +108,7 @@ export async function evidenceProfiles(client, people, { fromYear, onProgress } 
       }
       if (works.length < 100) break;
     }
+    if (failed) return;
     pmidsByPerson.set(p.id, [...pmids]);
     done += 1;
     onProgress?.(done, people.length * 2);

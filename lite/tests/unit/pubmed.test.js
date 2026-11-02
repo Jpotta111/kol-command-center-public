@@ -161,6 +161,52 @@ describe("evidenceProfiles", () => {
     expect(await settled).toBe("OpenAlex down");
   });
 
+  it("stops the other workers and sends no progress after one OpenAlex call fails", async () => {
+    stubPubMed((u) => ok(u));
+    const many = Array.from({ length: 12 }, (_, i) => ({ id: `x${i}` }));
+    const client = {
+      get: vi.fn(async (_path, params) => {
+        const id = String(params.filter).match(/author\.id:([^,]+)/)[1];
+        if (id === "x1") throw new Error("OpenAlex 500");
+        await new Promise((r) => setTimeout(r, 50));
+        return { results: [] };
+      }),
+    };
+    const progress = [];
+    let errorAt = null;
+    const p = evidenceProfiles(client, many, { fromYear: 2021, onProgress: (d) => progress.push(d) }).catch((e) => {
+      errorAt = progress.length;
+      return e.message;
+    });
+    await vi.runAllTimersAsync();
+    expect(await p).toBe("OpenAlex 500");
+    // Workers already mid-request may finish, but none report progress after the failure.
+    expect(progress.length).toBe(errorAt);
+    // The remaining people were never requested.
+    expect(client.get.mock.calls.length).toBeLessThan(many.length);
+  });
+
+  it("retries a passing PubMed server error instead of dropping the batch", async () => {
+    let calls = 0;
+    stubPubMed((u) => {
+      calls += 1;
+      return calls === 1 ? { ok: false, status: 503, json: async () => ({}) } : ok(u);
+    });
+    const stats = await run(evidenceProfiles(makeClient(), people, { fromYear: 2021 }));
+    expect(stats.get("p1").guidelines).toBe(1);
+  });
+
+  it("does not count IDs PubMed has no record for as indexed", async () => {
+    stubPubMed((u) => {
+      const ids = u.searchParams.get("id").split(",");
+      const result = { uids: ids };
+      for (const id of ids) result[id] = id === "4" ? { uid: id, error: "cannot get document summary" } : { uid: id, pubtype: pubtypes[id] };
+      return { ok: true, status: 200, json: async () => ({ result }) };
+    });
+    const stats = await run(evidenceProfiles(makeClient(), people, { fromYear: 2021 }));
+    expect(stats.get("p2").indexed).toBe(1);
+  });
+
   // KNOWN GAP. When PubMed keeps failing, a batch is skipped without any signal, so people
   // look like they have no guidelines or trials. This test is expected to fail until the app
   // reports skipped papers (for example a `skipped` count). When it is fixed this test will

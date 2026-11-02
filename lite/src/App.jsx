@@ -141,8 +141,13 @@ export default function App() {
 
   // After results load, check what kind of evidence the key people author (PubMed publication types).
   useEffect(() => {
-    if (!result) return;
+    // A new search clears the result: invalidate any run still in flight so it cannot write stale counts.
+    if (!result) {
+      evidenceRun.current += 1;
+      return;
+    }
     const run = ++evidenceRun.current;
+    let stopped = false;
     setEvidence(null);
     const targets = [
       ...result.people.filter((p) => p.isSeed),
@@ -151,14 +156,17 @@ export default function App() {
     setEvidenceStatus(`Checking PubMed for ${targets.length} people...`);
     evidenceProfiles(client, targets, {
       fromYear: result.fromYear,
-      onProgress: (d, t) => run === evidenceRun.current && setEvidenceStatus(`Checking PubMed for ${targets.length} people (${Math.round((100 * d) / t)}%)`),
+      onProgress: (d, t) => !stopped && run === evidenceRun.current && setEvidenceStatus(`Checking PubMed for ${targets.length} people (${Math.round((100 * d) / t)}%)`),
     })
       .then((m) => {
         if (run !== evidenceRun.current) return;
         setEvidence(m);
         setEvidenceStatus("");
       })
-      .catch((e) => run === evidenceRun.current && setEvidenceStatus(`PubMed check stopped: ${e.message}`));
+      .catch((e) => {
+        stopped = true;
+        if (run === evidenceRun.current) setEvidenceStatus(`Evidence check stopped: ${e.message}`);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
 
