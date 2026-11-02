@@ -152,6 +152,32 @@ describe("evidenceProfiles", () => {
     expect(calls.at(-1)).toEqual([people.length * 2, people.length * 2]);
   });
 
+  it("moves progress during the PubMed step instead of sitting at 50%", async () => {
+    const many = Array.from({ length: 400 }, (_, i) => i + 1);
+    const types = Object.fromEntries(many.map((n) => [n, ["Journal Article"]]));
+    const fetchMock = stubPubMed((u) => ok(u, types));
+    const map = { p1: many.slice(0, 200), p2: many.slice(200) };
+    const calls = [];
+    const fetchesAt = [];
+    await run(
+      evidenceProfiles(makeClient(map), [{ id: "p1" }, { id: "p2" }], {
+        fromYear: 2021,
+        onProgress: (d, t) => {
+          calls.push(d / t);
+          fetchesAt.push(fetchMock.mock.calls.length);
+        },
+      })
+    );
+    // 400 PMIDs = 3 PubMed batches. Progress must pass 50% while batches are still pending,
+    // not only after the last one returns.
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const firstPast50 = calls.findIndex((x) => x > 0.5);
+    expect(fetchesAt[firstPast50]).toBeLessThan(3);
+    // Progress never goes backwards and ends at 100%.
+    expect(calls.every((x, i) => i === 0 || x >= calls[i - 1])).toBe(true);
+    expect(calls.at(-1)).toBe(1);
+  });
+
   it("rejects when OpenAlex fails, so the app can show a stopped message", async () => {
     stubPubMed((u) => ok(u));
     const client = { get: vi.fn(async () => { throw new Error("OpenAlex down"); }) };

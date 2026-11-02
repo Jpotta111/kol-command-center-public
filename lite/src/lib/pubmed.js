@@ -38,7 +38,7 @@ function pmidOf(work) {
   return m ? m[1] : null;
 }
 
-async function summaries(pmids) {
+async function summaries(pmids, onBatch) {
   const out = {};
   for (let i = 0; i < pmids.length; i += 180) {
     const batch = pmids.slice(i, i + 180);
@@ -61,6 +61,7 @@ async function summaries(pmids) {
     const result = data?.result || {};
     // esummary returns { uid, error } for IDs it has no record for; those are not indexed.
     for (const id of batch) if (result[id] && !result[id].error) out[id] = result[id].pubtype || [];
+    onBatch?.(Math.min(i + 180, pmids.length), pmids.length);
     await sleep(GAP_MS);
   }
   return out;
@@ -117,7 +118,11 @@ export async function evidenceProfiles(client, people, { fromYear, onProgress } 
 
   // 2. Publication types from PubMed, fetched in shared batches.
   const all = [...new Set([...pmidsByPerson.values()].flat())];
-  const types = await summaries(all);
+  // Second half of the progress bar moves with each PubMed batch, so it does not sit at 50%.
+  const total = people.length * 2;
+  const types = await summaries(all, (sent, n) =>
+    onProgress?.(people.length + Math.floor((people.length * sent) / n), total)
+  );
 
   for (const p of people) {
     const s = emptyStats();
@@ -128,9 +133,8 @@ export async function evidenceProfiles(client, people, { fromYear, onProgress } 
       for (const k of Object.keys(c)) if (c[k]) s[k] += 1;
     }
     stats.set(p.id, s);
-    done += 1;
-    onProgress?.(done, people.length * 2);
   }
+  onProgress?.(total, total);
   return stats;
 }
 
