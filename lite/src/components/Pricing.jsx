@@ -5,20 +5,20 @@ const PLANS = [
     name: "Founding partner",
     price: "$3,500",
     note: "per month, locked for life. First 5 teams only.",
-    items: ["Everything in Growth while you are a partner", "Direct line to the builder and a say in the roadmap", "Annual prepay: 2 months free"],
+    items: ["Growth-level limits while you are a partner", "Direct line to the builder and a say in the roadmap", "Annual prepay: 2 months free"],
     highlight: true,
   },
   {
     name: "Starter",
     price: "$2,500",
     note: "per month",
-    items: ["3 seats", "1 therapeutic area", "100 KOLs watched"],
+    items: ["Planned: 3 seats", "1 therapeutic area", "100 KOLs watched"],
   },
   {
     name: "Growth",
     price: "$5,000",
     note: "per month",
-    items: ["10 seats", "3 therapeutic areas", "500 KOLs watched"],
+    items: ["Planned: 10 seats", "3 therapeutic areas", "500 KOLs watched"],
   },
 ];
 
@@ -36,9 +36,10 @@ export default function Pricing() {
         <p className="text-sm font-semibold tracking-wide text-brand uppercase">Pricing</p>
         <h1 className="mt-2 text-3xl sm:text-4xl font-bold text-ink">KOL intelligence for Medical Affairs teams without a six-figure budget</h1>
         <p className="mt-4 text-lg text-gray-600 max-w-3xl">
-          Every week, KOL Discover Team tells your team which KOLs are publishing guidelines, running trials or
-          moving, and who you have not engaged in a while. Built on public data (OpenAlex, PubMed,
-          ClinicalTrials.gov, CMS Open Payments). No claims or prescribing data.
+          KOL Discover Team is the paid version of the free Lite tool, being built with its first customers. The plan:
+          a weekly email telling your team which of your KOLs are publishing guidelines, running trials or have gone
+          quiet. Public data only (OpenAlex and PubMed today; clinical trial and payments data planned). No claims or
+          prescribing data.
         </p>
 
         <div className="mt-10 grid md:grid-cols-3 gap-4">
@@ -62,8 +63,8 @@ export default function Pricing() {
         <div className="mt-10 bg-brand-soft rounded-xl p-6">
           <h2 className="text-xl font-bold text-brand-dark">Start a founding partnership</h2>
           <p className="mt-2 text-sm text-gray-700 max-w-2xl">
-            Founding partners shape what gets built first. Billing starts only when your first automated weekly
-            digest arrives. Tell us about your team and we will set up a short call.
+            Weekly digests are not built yet. Founding partners shape what gets built first and are not billed until
+            their first automated weekly digest is delivered. Tell us about your team and we will set up a short call.
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <a
@@ -108,7 +109,7 @@ export default function Pricing() {
           <a className="underline" href={LINKEDIN_URL} target="_blank" rel="noreferrer">
             Jared Potter
           </a>
-          . Prices are for founding conversations and may change for later customers.
+          . Plan limits are targets, not commitments, until your agreement says otherwise. Prices may change for later customers.
         </p>
       </main>
     </div>

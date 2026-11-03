@@ -245,6 +245,12 @@ describe("evidenceProfiles", () => {
     expect(stats.skippedPapers).toBe(4);
   });
 
+  it("treats a 200 response with an error body as a failed batch", async () => {
+    stubPubMed(() => ({ ok: true, status: 200, json: async () => ({ error: "rate limited" }) }));
+    const stats = await run(evidenceProfiles(makeClient(), people, { fromYear: 2021 }));
+    expect(stats.skippedPapers).toBe(4);
+  });
+
   it("does not report skipped papers when PubMed answers", async () => {
     stubPubMed((u) => ok(u));
     const stats = await run(evidenceProfiles(makeClient(), people, { fromYear: 2021 }));

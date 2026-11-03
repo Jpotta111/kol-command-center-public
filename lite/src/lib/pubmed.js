@@ -55,7 +55,13 @@ async function summaries(pmids, onBatch) {
           continue;
         }
         if (!resp.ok) break;
-        data = await resp.json();
+        const body = await resp.json();
+        // NCBI can answer 200 with an error body and no result; treat that as a failed attempt.
+        if (!body || body.error || !body.result) {
+          await sleep(1500 * (attempt + 1));
+          continue;
+        }
+        data = body;
       } catch {
         await sleep(800);
       }
@@ -104,6 +110,7 @@ export async function evidenceProfiles(client, people, { fromYear, onProgress } 
     for (let page = 1; page <= 2; page++) {
       const data = await client.get("/works", {
         filter: `author.id:${id},from_publication_date:${fromYear}-01-01`,
+        sort: "publication_date:desc",
         per_page: 100,
         page,
         select: "id,ids",

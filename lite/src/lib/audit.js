@@ -10,6 +10,7 @@ export const FLAGS = {
   noPapers: "No PubMed-indexed papers in this window",
   noEvidence: "No guideline, trial or review evidence found",
   unchecked: "PubMed could not check some of their papers",
+  capped: "Only the newest 200 papers were read",
 };
 
 /** Build one audit row from the input person, the OpenAlex match (or null) and PubMed stats (or undefined). */
@@ -41,8 +42,10 @@ export function auditRow(input, match, stats) {
   const flags = [];
   if (match.confidence === "low") flags.push(FLAGS.lowConfidence);
   if (s.skipped) flags.push(FLAGS.unchecked);
+  if (s.capped) flags.push(FLAGS.capped);
   if (row.indexed === 0) flags.push(FLAGS.noPapers);
-  else if (row.guidelines + row.trials + row.meta + row.reviews === 0) flags.push(FLAGS.noEvidence);
+  // Do not claim "no evidence" for someone whose papers PubMed could not fully check.
+  else if (!s.skipped && row.guidelines + row.trials + row.meta + row.reviews === 0) flags.push(FLAGS.noEvidence);
   return { ...row, flags };
 }
 
@@ -52,6 +55,8 @@ export function auditSummary(rows) {
     noEvidence: rows.filter((r) => r.flags.includes(FLAGS.noEvidence)).length,
     noMatch: rows.filter((r) => r.flags.includes(FLAGS.noMatch)).length,
     lowConfidence: rows.filter((r) => r.flags.includes(FLAGS.lowConfidence)).length,
+    noPapers: rows.filter((r) => r.flags.includes(FLAGS.noPapers)).length,
+    unchecked: rows.filter((r) => r.flags.includes(FLAGS.unchecked)).length,
     withEvidence: rows.filter((r) => r.guidelines + r.trials + r.meta + r.reviews > 0).length,
   };
 }

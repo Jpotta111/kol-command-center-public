@@ -35,6 +35,17 @@ describe("auditRow", () => {
   });
 });
 
+describe("auditRow edge cases", () => {
+  it("does not say no evidence when PubMed skipped papers", () => {
+    const r = auditRow({ name: "A" }, match(), { indexed: 2, guidelines: 0, trials: 0, meta: 0, reviews: 0, skipped: 1 });
+    expect(r.flags).toEqual([FLAGS.unchecked]);
+  });
+  it("flags people whose papers hit the cap", () => {
+    const r = auditRow({ name: "A" }, match(), { indexed: 200, guidelines: 0, trials: 0, meta: 0, reviews: 0, capped: true });
+    expect(r.flags).toEqual([FLAGS.capped, FLAGS.noEvidence]);
+  });
+});
+
 describe("auditSummary and csv", () => {
   const rows = [
     auditRow({ name: "A" }, match(), { indexed: 4, guidelines: 1, trials: 0, meta: 0, reviews: 0 }),
@@ -42,7 +53,7 @@ describe("auditSummary and csv", () => {
     auditRow({ name: "C" }, null),
   ];
   it("counts each group", () => {
-    expect(auditSummary(rows)).toEqual({ total: 3, noEvidence: 1, noMatch: 1, lowConfidence: 0, withEvidence: 1 });
+    expect(auditSummary(rows)).toEqual({ total: 3, noEvidence: 1, noMatch: 1, lowConfidence: 0, noPapers: 0, unchecked: 0, withEvidence: 1 });
   });
   it("names columns with the window year and joins flags", () => {
     const out = auditCsvRows(rows, 2021);

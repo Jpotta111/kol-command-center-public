@@ -173,7 +173,7 @@ test("List Audit flags a person who is not in OpenAlex", async ({ page }) => {
 test("pricing page shows the three plans and the founding partner call to action", async ({ page }) => {
   await page.goto("/pricing");
   await expect(page.getByRole("heading", { name: "Founding partner", exact: true })).toBeVisible();
-  await expect(page.getByText("$3,500")).toBeVisible();
+  await expect(page.getByText("$3,500", { exact: true })).toBeVisible();
   await expect(page.getByText("$2,500")).toBeVisible();
   await expect(page.getByText("$5,000")).toBeVisible();
   await expect(page.getByRole("link", { name: "Start a founding partnership" })).toBeVisible();

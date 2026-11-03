@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { parsePeopleCsv, CSV_TEMPLATE, downloadText, rowsToCsv } from "../lib/csv";
 import { runAudit, auditSummary, auditCsvRows, FLAGS } from "../lib/audit";
 import { SIGNUP_URL } from "../config";
@@ -13,6 +13,12 @@ export default function ListAudit({ client, guard, onRunDone, onBack }) {
   const [people, setPeople] = useState(null);
   const [result, setResult] = useState(null);
   const fromYear = new Date().getFullYear() - YEARS;
+  const runId = useRef(0);
+
+  function leave() {
+    runId.current += 1; // ignore any run still in flight
+    onBack();
+  }
 
   async function onFile(e) {
     const file = e.target.files?.[0];
@@ -32,16 +38,22 @@ export default function ListAudit({ client, guard, onRunDone, onBack }) {
   async function start() {
     setError("");
     setState("running");
+    const id = ++runId.current;
     try {
-      const out = await runAudit(client, people, { fromYear, onProgress: setProgress });
+      const out = await runAudit(client, people, {
+        fromYear,
+        onProgress: (t) => id === runId.current && setProgress(t),
+      });
+      if (id !== runId.current) return;
       setResult(out);
       setState("done");
       onRunDone?.();
     } catch (err) {
+      if (id !== runId.current) return;
       setError(err.message || String(err));
       setState("idle");
     } finally {
-      setProgress("");
+      if (id === runId.current) setProgress("");
     }
   }
 
@@ -54,7 +66,7 @@ export default function ListAudit({ client, guard, onRunDone, onBack }) {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
-      <button onClick={onBack} className="text-sm text-brand underline">
+      <button onClick={leave} className="text-sm text-brand underline">
         Back
       </button>
       <h1 className="mt-3 text-3xl font-bold text-ink">List Audit</h1>
@@ -67,7 +79,7 @@ export default function ListAudit({ client, guard, onRunDone, onBack }) {
       <div className="mt-6 bg-white border border-gray-200 rounded-xl p-5">
         <label className="block text-sm font-medium text-ink">
           CSV file (columns: name, institution, orcid)
-          <input type="file" accept=".csv,text/csv" onChange={onFile} className="mt-2 block text-sm" />
+          <input type="file" accept=".csv,text/csv" onChange={onFile} disabled={state === "running"} className="mt-2 block text-sm" />
         </label>
         <button
           onClick={() => downloadText(CSV_TEMPLATE, "list_audit_template.csv")}
@@ -80,7 +92,15 @@ export default function ListAudit({ client, guard, onRunDone, onBack }) {
             {w}
           </p>
         ))}
-        {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+        {error && (
+          <p role="alert" className="mt-3 text-sm text-red-600">
+            {error}
+          </p>
+        )}
+        <p className="mt-3 text-xs text-gray-500">
+          Works without setup for small lists. If OpenAlex says the free budget is used up, add a free key under
+          Keys at the top.
+        </p>
         {people && state !== "running" && (
           <button
             onClick={() => guard("search", start)}
@@ -90,7 +110,7 @@ export default function ListAudit({ client, guard, onRunDone, onBack }) {
           </button>
         )}
         {state === "running" && (
-          <p className="mt-4 text-sm text-ink">
+          <p role="status" className="mt-4 text-sm text-ink">
             <span className="inline-block w-4 h-4 mr-2 align-middle rounded-full border-2 border-brand border-t-transparent animate-spin" />
             {progress || "Working"}
           </p>
@@ -103,7 +123,9 @@ export default function ListAudit({ client, guard, onRunDone, onBack }) {
             <p className="text-sm text-ink">
               <b>{summary.noEvidence}</b> of {summary.total} have no guideline, trial or review evidence found
               {summary.noMatch > 0 && <>; <b>{summary.noMatch}</b> could not be found</>}
-              {summary.lowConfidence > 0 && <>; <b>{summary.lowConfidence}</b> need a name check</>}.
+              {summary.lowConfidence > 0 && <>; <b>{summary.lowConfidence}</b> need a name check</>}
+              {summary.noPapers > 0 && <>; <b>{summary.noPapers}</b> have no PubMed papers in this window</>}
+              {summary.unchecked > 0 && <>; <b>{summary.unchecked}</b> could not be fully checked</>}.
             </p>
             <button
               onClick={() => guard("export", exportCsv)}
