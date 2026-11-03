@@ -26,6 +26,11 @@ describe("classify", () => {
     expect(classify(["Review"]).reviews).toBe(true);
   });
 
+  it("does not count trial protocols as trials", () => {
+    expect(classify(["Clinical Trial Protocol"]).trials).toBe(false);
+    expect(classify(["Clinical Trial Protocol", "Randomized Controlled Trial"]).trials).toBe(true);
+  });
+
   it("flags observational studies and handles empty input", () => {
     expect(classify(["Observational Study"]).observational).toBe(true);
     expect(Object.values(classify(undefined)).every((v) => v === false)).toBe(true);
@@ -233,13 +238,27 @@ describe("evidenceProfiles", () => {
     expect(stats.get("p2").indexed).toBe(1);
   });
 
-  // KNOWN GAP. When PubMed keeps failing, a batch is skipped without any signal, so people
-  // look like they have no guidelines or trials. This test is expected to fail until the app
-  // reports skipped papers (for example a `skipped` count). When it is fixed this test will
-  // start failing as "expected to fail"; change `it.fails` to `it` then.
-  it.fails("reports papers that PubMed could not classify", async () => {
+  it("reports papers that PubMed could not classify", async () => {
     stubPubMed(() => ({ ok: false, status: 429, json: async () => ({}) }));
     const stats = await run(evidenceProfiles(makeClient(), people, { fromYear: 2021 }));
-    expect(stats.get("p1").skipped).toBeGreaterThan(0);
+    expect(stats.get("p1").skipped).toBe(3);
+    expect(stats.skippedPapers).toBe(4);
+  });
+
+  it("does not report skipped papers when PubMed answers", async () => {
+    stubPubMed((u) => ok(u));
+    const stats = await run(evidenceProfiles(makeClient(), people, { fromYear: 2021 }));
+    expect(stats.skippedPapers).toBe(0);
+    expect(stats.get("p1").skipped).toBeUndefined();
+  });
+
+  it("flags people whose papers hit the 200 paper cap", async () => {
+    const many = Array.from({ length: 250 }, (_, i) => i + 1);
+    const types = Object.fromEntries(many.map((n) => [n, ["Journal Article"]]));
+    stubPubMed((u) => ok(u, types));
+    const stats = await run(evidenceProfiles(makeClient({ p1: many, p2: [1] }), [{ id: "p1" }, { id: "p2" }], { fromYear: 2021 }));
+    expect(stats.get("p1").capped).toBe(true);
+    expect(stats.get("p2").capped).toBeUndefined();
+    expect(stats.cappedPeople).toBe(1);
   });
 });

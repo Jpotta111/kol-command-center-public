@@ -13,6 +13,7 @@ import { loadSavedKeys, persistKeys } from "./lib/storage";
 import { downloadText, rowsToCsv } from "./lib/csv";
 import { SIGNUP_URL, LINKEDIN_URL, REPO_URL, GATE_MODE } from "./config";
 import SignupGate from "./components/SignupGate";
+import ListAudit from "./components/ListAudit";
 import { isSignedUp } from "./lib/signup";
 import { evidenceProfiles, evidenceLeaders } from "./lib/pubmed";
 
@@ -63,6 +64,7 @@ export default function App() {
   const [view, setView] = useState("graph");
   const [evidence, setEvidence] = useState(null); // Map(personId -> PubMed stats)
   const [evidenceStatus, setEvidenceStatus] = useState("");
+  const [evidenceNote, setEvidenceNote] = useState("");
   const evidenceRun = useRef(0);
   const [signedUp, setSignedUp] = useState(isSignedUp);
   const [freeUsed, setFreeUsed] = useState(freeSearchUsed);
@@ -149,6 +151,7 @@ export default function App() {
     const run = ++evidenceRun.current;
     let stopped = false;
     setEvidence(null);
+    setEvidenceNote("");
     const targets = [
       ...result.people.filter((p) => p.isSeed),
       ...result.people.filter((p) => !p.isSeed).slice(0, EVIDENCE_LIMIT),
@@ -162,6 +165,10 @@ export default function App() {
         if (run !== evidenceRun.current) return;
         setEvidence(m);
         setEvidenceStatus("");
+        const notes = [];
+        if (m.skippedPapers) notes.push(`PubMed could not check ${m.skippedPapers} papers, so guideline and trial counts may be low.`);
+        if (m.cappedPeople) notes.push(`${m.cappedPeople} people have more than ${m.paperCap} papers; only the newest ${m.paperCap} were read.`);
+        setEvidenceNote(notes.join(" "));
       })
       .catch((e) => {
         stopped = true;
@@ -247,7 +254,21 @@ export default function App() {
       </header>
 
       <main className="flex-1 min-h-0 overflow-auto">
-        {step === "welcome" && <Welcome onStart={() => guard("entry", () => setStep("keys"))} />}
+        {step === "welcome" && (
+          <Welcome onStart={() => guard("entry", () => setStep("keys"))} onAudit={() => setStep("audit")} />
+        )}
+
+        {step === "audit" && (
+          <ListAudit
+            client={client}
+            guard={guard}
+            onRunDone={() => {
+              markFreeSearchUsed();
+              setFreeUsed(true);
+            }}
+            onBack={() => setStep("welcome")}
+          />
+        )}
 
         {step === "keys" && (
           <KeySetup keys={keys} onChange={saveKeys} onContinue={() => setStep(result ? "results" : "start")} />
@@ -357,6 +378,9 @@ export default function App() {
               evidenceStatus={evidenceStatus}
               fromYear={result.fromYear}
             />
+            {evidenceNote && (
+              <p className="bg-amber-50 text-amber-800 text-sm px-4 sm:px-6 py-2 border-b border-amber-200">{evidenceNote}</p>
+            )}
             {stats.shared === 0 && (
               <p className="bg-amber-50 text-amber-800 text-sm px-4 sm:px-6 py-2 border-b border-amber-200">
                 No shared collaborators found at this threshold. Try a longer time window, or start from researchers in the same field.

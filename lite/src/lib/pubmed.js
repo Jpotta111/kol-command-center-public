@@ -21,7 +21,8 @@ export function classify(pubtypes) {
   const has = (s) => t.includes(s);
   return {
     guidelines: has("Practice Guideline") || has("Guideline") || has("Consensus Development Conference"),
-    trials: t.some((x) => /Clinical Trial|Randomized Controlled Trial/.test(x)),
+    // Trial protocols describe a planned trial, not a result, so they do not count.
+    trials: t.some((x) => /Clinical Trial|Randomized Controlled Trial/.test(x) && !/Protocol/i.test(x)),
     meta: has("Meta-Analysis") || has("Systematic Review"),
     reviews: has("Review") && !has("Systematic Review") && !has("Meta-Analysis"),
     observational: has("Observational Study"),
@@ -40,6 +41,7 @@ function pmidOf(work) {
 
 async function summaries(pmids, onBatch) {
   const out = {};
+  const failed = new Set(); // PMIDs in batches PubMed never answered, so they are not silently treated as "no evidence"
   for (let i = 0; i < pmids.length; i += 180) {
     const batch = pmids.slice(i, i + 180);
     const url = `${EUTILS}/esummary.fcgi?db=pubmed&retmode=json&id=${batch.join(",")}`;
@@ -58,14 +60,17 @@ async function summaries(pmids, onBatch) {
         await sleep(800);
       }
     }
+    if (!data) for (const id of batch) failed.add(id);
     const result = data?.result || {};
     // esummary returns { uid, error } for IDs it has no record for; those are not indexed.
     for (const id of batch) if (result[id] && !result[id].error) out[id] = result[id].pubtype || [];
     onBatch?.(Math.min(i + 180, pmids.length), pmids.length);
     await sleep(GAP_MS);
   }
-  return out;
+  return { out, failed };
 }
+
+const PAPER_CAP = 200; // OpenAlex pages read per person (2 x 100)
 
 /**
  * For each person, count guidelines, trials, reviews and so on among their papers since fromYear.
@@ -74,6 +79,7 @@ async function summaries(pmids, onBatch) {
 export async function evidenceProfiles(client, people, { fromYear, onProgress } = {}) {
   const stats = new Map();
   const pmidsByPerson = new Map();
+  const cappedIds = new Set();
   let done = 0;
 
   // 1. PubMed IDs for each person's papers, from OpenAlex (4 people at a time).
@@ -108,6 +114,7 @@ export async function evidenceProfiles(client, people, { fromYear, onProgress } 
         if (pm) pmids.add(pm);
       }
       if (works.length < 100) break;
+      if (page === 2) cappedIds.add(p.id); // a full second page means there may be more papers than we read
     }
     if (failed) return;
     pmidsByPerson.set(p.id, [...pmids]);
@@ -120,20 +127,26 @@ export async function evidenceProfiles(client, people, { fromYear, onProgress } 
   const all = [...new Set([...pmidsByPerson.values()].flat())];
   // Second half of the progress bar moves with each PubMed batch, so it does not sit at 50%.
   const total = people.length * 2;
-  const types = await summaries(all, (sent, n) =>
+  const { out: types, failed: failedPmids } = await summaries(all, (sent, n) =>
     onProgress?.(people.length + Math.floor((people.length * sent) / n), total)
   );
 
   for (const p of people) {
     const s = emptyStats();
     for (const pm of pmidsByPerson.get(p.id) || []) {
+      if (failedPmids.has(pm)) s.skipped = (s.skipped || 0) + 1;
       if (!types[pm]) continue;
       s.indexed += 1;
       const c = classify(types[pm]);
       for (const k of Object.keys(c)) if (c[k]) s[k] += 1;
     }
+    if (cappedIds.has(p.id)) s.capped = true;
     stats.set(p.id, s);
   }
+  // Totals for the app to show a notice, so a PubMed outage never looks like "no evidence".
+  stats.skippedPapers = failedPmids.size;
+  stats.cappedPeople = people.filter((p) => cappedIds.has(p.id)).length;
+  stats.paperCap = PAPER_CAP;
   onProgress?.(total, total);
   return stats;
 }

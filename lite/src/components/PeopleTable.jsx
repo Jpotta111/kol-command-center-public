@@ -41,8 +41,8 @@ export default function PeopleTable({ people, seedNames, selectedId, onSelect, e
           onChange={(e) => setFilter(e.target.value)}
         >
           {FILTERS.map(([v, l]) => (
-            <option key={v} value={v}>
-              {l}
+            <option key={v} value={v} disabled={v === "evidence" && !evidence}>
+              {v === "evidence" && !evidence ? `${l} (checking PubMed...)` : l}
             </option>
           ))}
         </select>

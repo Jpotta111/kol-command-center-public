@@ -22,3 +22,6 @@ export const ROLES = [
   "Researcher or academic",
   "Industry (pharma, biotech, device, health tech)",
 ];
+
+// Pricing page. Leave empty until a Stripe payment link exists; the "Pay by card" button stays hidden.
+export const STRIPE_FOUNDING_LINK = "";
