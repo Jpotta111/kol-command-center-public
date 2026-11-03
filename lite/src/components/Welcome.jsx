@@ -3,7 +3,7 @@ import { SIGNUP_URL, LINKEDIN_URL } from "../config";
 export default function Welcome({ onStart, onAudit }) {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
-      <p className="text-sm font-semibold tracking-wide text-brand uppercase">KOL Discover Lite</p>
+      <p className="text-sm font-semibold tracking-wide text-brand uppercase">KOL Discovery Lite</p>
       <h1 className="mt-3 text-3xl sm:text-5xl font-bold leading-tight text-ink">
         Find the researchers connected to the experts you care about.
       </h1>
@@ -71,7 +71,7 @@ export default function Welcome({ onStart, onAudit }) {
         </a>
         . Teams:{" "}
         <a className="text-brand underline" href="/pricing">
-          see KOL Discover Team pricing
+          see KOL Discovery Team pricing
         </a>
         .
       </div>

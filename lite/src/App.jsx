@@ -36,7 +36,7 @@ function markFreeSearchUsed() {
 }
 
 const GATE_REASONS = {
-  entry: "KOL Discover Lite is free. Enter your email to start.",
+  entry: "KOL Discovery Lite is free. Enter your email to start.",
   search: "You have used your free search. Enter your email for unlimited searches, CSV export and AI briefs.",
   export: "Enter your email to export your results to CSV, plus unlimited searches and AI briefs.",
   brief: "Enter your email to write AI briefs, plus unlimited searches and CSV export.",
@@ -218,7 +218,7 @@ export default function App() {
             disabled={step === "running"}
             className="font-bold text-ink tracking-tight"
           >
-            KOL Discover <span className="text-brand">Lite</span>
+            KOL Discovery <span className="text-brand">Lite</span>
           </button>
           {step !== "welcome" && (
             <nav className="hidden sm:flex items-center gap-1 text-xs">

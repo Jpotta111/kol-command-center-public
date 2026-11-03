@@ -28,7 +28,7 @@ export default function Pricing() {
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-14 flex items-center">
           <a href="/" className="font-bold text-ink tracking-tight">
-            KOL Discover <span className="text-brand">Team</span>
+            KOL Discovery <span className="text-brand">Team</span>
           </a>
         </div>
       </header>
@@ -36,7 +36,7 @@ export default function Pricing() {
         <p className="text-sm font-semibold tracking-wide text-brand uppercase">Pricing</p>
         <h1 className="mt-2 text-3xl sm:text-4xl font-bold text-ink">KOL intelligence for Medical Affairs teams without a six-figure budget</h1>
         <p className="mt-4 text-lg text-gray-600 max-w-3xl">
-          KOL Discover Team is the paid version of the free Lite tool, being built with its first customers. The plan:
+          KOL Discovery Team is the paid version of the free Lite tool, being built with its first customers. The plan:
           a weekly email telling your team which of your KOLs are publishing guidelines, running trials or have gone
           quiet. Public data only (OpenAlex and PubMed today; clinical trial and payments data planned). No claims or
           prescribing data.
@@ -99,7 +99,7 @@ export default function Pricing() {
           <div>
             <h3 className="font-semibold text-ink">Try it free first</h3>
             <p className="mt-1">
-              <a className="text-brand underline" href="/">KOL Discover Lite</a> maps KOL networks for free, and the
+              <a className="text-brand underline" href="/">KOL Discovery Lite</a> maps KOL networks for free, and the
               List Audit checks who on your speaker list has guideline, trial or review evidence.
             </p>
           </div>

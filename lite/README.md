@@ -1,4 +1,4 @@
-# KOL Discover Lite
+# KOL Discovery Lite
 
 Find the researchers connected to the experts you care about. Start from a publication, a research topic, or a CSV of people you already know. The app maps who they publish with, highlights the collaborators they have in common, and lets you export everything to CSV.
 
