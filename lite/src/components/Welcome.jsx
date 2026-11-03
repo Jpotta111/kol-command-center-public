@@ -1,9 +1,9 @@
 import { SIGNUP_URL, LINKEDIN_URL } from "../config";
 
-export default function Welcome({ onStart }) {
+export default function Welcome({ onStart, onAudit }) {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
-      <p className="text-sm font-semibold tracking-wide text-brand uppercase">KOL Discover Lite</p>
+      <p className="text-sm font-semibold tracking-wide text-brand uppercase">KOL Discovery Lite</p>
       <h1 className="mt-3 text-3xl sm:text-5xl font-bold leading-tight text-ink">
         Find the researchers connected to the experts you care about.
       </h1>
@@ -19,6 +19,12 @@ export default function Welcome({ onStart }) {
           className="bg-brand text-white font-semibold px-6 py-3 rounded-lg hover:bg-brand-dark transition-colors"
         >
           Get started
+        </button>
+        <button
+          onClick={onAudit}
+          className="border border-brand text-brand font-semibold px-6 py-3 rounded-lg bg-white hover:bg-brand-soft"
+        >
+          Audit my speaker list
         </button>
         <span className="self-center text-sm text-gray-500">Free. Your first search needs no signup. About 2 minutes to set up.</span>
       </div>
@@ -62,6 +68,10 @@ export default function Welcome({ onStart }) {
         . Want to hear when new features ship (industry payments, clinical trial roles, saved searches)?{" "}
         <a className="text-brand underline font-medium" href={SIGNUP_URL} target="_blank" rel="noreferrer">
           Get early access
+        </a>
+        . Teams:{" "}
+        <a className="text-brand underline" href="/pricing">
+          see KOL Discovery Team pricing
         </a>
         .
       </div>

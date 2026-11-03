@@ -132,11 +132,51 @@ test("evidence card, list filter, person panel and CSV use PubMed data", async (
   expect(outside).toEqual([]);
 });
 
-// KNOWN GAP (see the matching unit test). If PubMed fails, the card currently says nobody
-// authors guidelines or trials, which is wrong. test.fail() passes while the gap exists and
-// will fail once the app shows a notice, at which point change it to a normal test().
-test.fail("tells the user when PubMed could not be reached", async ({ page }) => {
+test("tells the user when PubMed could not be reached", async ({ page }) => {
   await mockNetwork(page, { pubmedStatus: 500 });
   await searchFromCsv(page);
-  await expect(page.getByText(/PubMed.*(could not|unavailable|skipped|failed)/i)).toBeVisible({ timeout: 8000 });
+  await expect(page.getByText(/PubMed could not check \d+ papers/i)).toBeVisible({ timeout: 25000 });
+});
+
+test("List Audit counts evidence per person and flags people with none", async ({ page }) => {
+  const outside = await mockNetwork(page);
+  await page.addInitScript(() => localStorage.setItem("kol_discover_lite_signed_up_v1", "1"));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Audit my speaker list" }).click();
+  // Fay Zeta (C3) is only on the meta-analysis paper, Ann (A1) has all four. Bob has guideline + review.
+  const csv = "name,institution,orcid\nAnn Alpha,Test University,0000-0001-0000-0001\nBob Beta,Test University,0000-0001-0000-0002\n";
+  await page.locator('input[type="file"]').setInputFiles({ name: "list.csv", mimeType: "text/csv", buffer: Buffer.from(csv) });
+  await page.getByRole("button", { name: "Audit 2 people" }).click();
+  const ann = page.locator("tbody tr", { hasText: "Ann Alpha" });
+  await expect(ann).toBeVisible({ timeout: 20000 });
+  await expect(page.getByText(/of 2 have no guideline, trial or review evidence found/)).toBeVisible();
+  // Ann: 1 guideline, 1 trial. Bob: guideline W1, review W3.
+  await expect(ann.locator("td").nth(2)).toHaveText("1");
+  await expect(ann.locator("td").nth(3)).toHaveText("1");
+  const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Export audit CSV" }).click()]);
+  const out = fs.readFileSync(await download.path(), "utf8");
+  expect(out.split(/\r?\n/)[0]).toContain("pubmed_guidelines_since_");
+  expect(outside).toEqual([]);
+});
+
+test("List Audit flags a person who is not in OpenAlex", async ({ page }) => {
+  await mockNetwork(page);
+  await page.addInitScript(() => localStorage.setItem("kol_discover_lite_signed_up_v1", "1"));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Audit my speaker list" }).click();
+  const csv = "name,institution,orcid\nGhost Person,Nowhere,0000-0009-9999-9999\n";
+  await page.locator('input[type="file"]').setInputFiles({ name: "list.csv", mimeType: "text/csv", buffer: Buffer.from(csv) });
+  await page.getByRole("button", { name: "Audit 1 person" }).click();
+  await expect(page.getByText("Could not find this person in OpenAlex")).toBeVisible({ timeout: 20000 });
+});
+
+test("pricing page shows the three plans and the founding partner call to action", async ({ page }) => {
+  await page.goto("/pricing");
+  await expect(page.getByRole("heading", { name: "Founding partner", exact: true })).toBeVisible();
+  await expect(page.getByText("$3,500", { exact: true })).toBeVisible();
+  await expect(page.getByText("$2,500")).toBeVisible();
+  await expect(page.getByText("$5,000")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Start a founding partnership" })).toBeVisible();
+  // No Stripe link is configured yet, so no card button.
+  await expect(page.getByRole("link", { name: "Pay by card" })).toHaveCount(0);
 });

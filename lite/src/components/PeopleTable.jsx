@@ -13,18 +13,19 @@ export default function PeopleTable({ people, seedNames, selectedId, onSelect, e
   const [filter, setFilter] = useState("all");
   const [q, setQ] = useState("");
 
+  const activeFilter = filter === "evidence" && !evidence ? "all" : filter;
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return people.filter(
       (p) =>
-        (filter === "all" ||
-          p.category === filter ||
-          (filter === "evidence" && (evidence?.get(p.id)?.guidelines > 0 || evidence?.get(p.id)?.trials > 0))) &&
+        (activeFilter === "all" ||
+          p.category === activeFilter ||
+          (activeFilter === "evidence" && (evidence?.get(p.id)?.guidelines > 0 || evidence?.get(p.id)?.trials > 0))) &&
         (!needle ||
           p.display_name.toLowerCase().includes(needle) ||
           (p.institution || "").toLowerCase().includes(needle))
     );
-  }, [people, filter, q, evidence]);
+  }, [people, activeFilter, q, evidence]);
 
   return (
     <div className="h-full flex flex-col">
@@ -37,12 +38,12 @@ export default function PeopleTable({ people, seedNames, selectedId, onSelect, e
         />
         <select
           className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm"
-          value={filter}
+          value={activeFilter}
           onChange={(e) => setFilter(e.target.value)}
         >
           {FILTERS.map(([v, l]) => (
-            <option key={v} value={v}>
-              {l}
+            <option key={v} value={v} disabled={v === "evidence" && !evidence}>
+              {v === "evidence" && !evidence ? `${l} (needs the PubMed check)` : l}
             </option>
           ))}
         </select>
